@@ -7,7 +7,7 @@ REQUIRES = [
 ]
 
 setup(
-    name='giza',
+    name='libgiza',
     maintainer='tychoish',
     maintainer_email='sam@tychoish.com',
     description='Build System Toolkit',
