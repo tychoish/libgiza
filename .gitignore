@@ -1,0 +1,10 @@
+build/
+dist/
+*pyc
+*pyc
+.DS_Store
+.#*
+*.bak
+*#*
+TAGS
+*.egg-info
