@@ -147,7 +147,7 @@ class SerialPool(object):
             else:
                 msg = str(job.job)
 
-            logger.info('running: ' + msg)
+            logger.debug('running: ' + msg)
             results.append(job.run())
 
         return results
