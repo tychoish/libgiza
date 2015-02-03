@@ -45,6 +45,46 @@ class InheritableContentError(Exception):
 
     pass
 
+
+class InheritanceReference(RecursiveConfigurationBase):
+    """
+    Represents a single reference to another unit of content. The
+    setter method for the :meth:`~giza.inheritance.InheritanceReference.file`
+    attribute, returns an error if it cannot discover a specified value.
+    """
+
+    _option_registry = ['ref']
+
+    @property
+    def resolved(self):
+        if 'resolved' not in self.state:
+            return False
+        else:
+            return self.state['resolved']
+
+    @resolved.setter
+    def resolved(self, value):
+        if isinstance(value, bool):
+            self.state['resolved'] = value
+        else:
+            raise TypeError('{0} is not boolean'.format(value))
+
+    def is_resolved(self):
+        return self.resolved
+
+    @property
+    def file(self):
+        return self.state['file']
+
+    @file.setter
+    def file(self, value):
+        if os.path.exists(value):
+            self.state['file'] = value
+
+        if 'file' not in self.state:
+            print 'this is bad'
+            raise TypeError('file named {0} does not exist'.format(value))
+
 class InheritableContentBase(RecursiveConfigurationBase):
     """
     Base data object that represents a single unit of content. Typically
@@ -52,6 +92,7 @@ class InheritableContentBase(RecursiveConfigurationBase):
     """
 
     _option_registry = ['pre', 'post', 'final', 'ref', 'content', 'edition']
+    _reference_type = InheritanceReference
 
     def get_default_replacement(self):
         return {}
@@ -110,7 +151,7 @@ class InheritableContentBase(RecursiveConfigurationBase):
 
     @source.setter
     def source(self, value):
-        self.state['source'] = InheritanceReference(value, self.conf)
+        self.state['source'] = self._reference_type(value, self.conf)
 
     inherit = source
 
@@ -197,46 +238,6 @@ class InheritableContentBase(RecursiveConfigurationBase):
 
                     self.state[key].render()
 
-
-class InheritanceReference(RecursiveConfigurationBase):
-    """
-    Represents a single reference to another unit of content. The
-    setter method for the :meth:`~giza.inheritance.InheritanceReference.file`
-    attribute, returns an error if it cannot discover a specified value.
-    """
-
-    _option_registry = ['ref']
-
-    @property
-    def resolved(self):
-        if 'resolved' not in self.state:
-            return False
-        else:
-            return self.state['resolved']
-
-    @resolved.setter
-    def resolved(self, value):
-        if isinstance(value, bool):
-            self.state['resolved'] = value
-        else:
-            raise TypeError('{0} is not boolean'.format(value))
-
-    def is_resolved(self):
-        return self.resolved
-
-    @property
-    def file(self):
-        return self.state['file']
-
-    @file.setter
-    def file(self, value):
-        if os.path.exists(value):
-            self.state['file'] = value
-
-        if 'file' not in self.state:
-            raise TypeError('file named {0} does not exist'.format(value))
-
-
 ##############################
 
 class DataContentBase(RecursiveConfigurationBase):
@@ -245,7 +246,7 @@ class DataContentBase(RecursiveConfigurationBase):
     """
 
     content_class = InheritableContentBase
-    edition_check = lambda x,y: True
+    edition_check = staticmethod(lambda x,y: True)
 
     def __init__(self, src, data, conf):
         self._state = { 'content': { } }

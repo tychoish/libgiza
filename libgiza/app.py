@@ -22,7 +22,7 @@ import logging
 import random
 import numbers
 
-logger = logging.getLogger('giza.app')
+logger = logging.getLogger('libgiza.app')
 
 from libgiza.pool import ThreadPool, ProcessPool, SerialPool, WorkerPool, EventPool
 from libgiza.task import Task, MapTask
