@@ -25,7 +25,10 @@ import subprocess
 
 logger = logging.getLogger('libgiza.git')
 
-class GitError(Exception): pass
+
+class GitError(Exception):
+    pass
+
 
 class GitRepo(object):
     """
@@ -170,11 +173,11 @@ class GitRepo(object):
         return self.cmd(*args)
 
     def commit_messages(self, num=1):
-        args = ['log', '--oneline', '--max-count=' + str(num) ]
+        args = ['log', '--oneline', '--max-count=' + str(num)]
         log = self.cmd(*args)
 
-        return [ ' '.join(m.split(' ')[1:])
-                 for m in log.split('\n') ]
+        return [' '.join(m.split(' ')[1:])
+                for m in log.split('\n')]
 
     def cherry_pick(self, *args):
         if len(args) == 1:
@@ -182,7 +185,7 @@ class GitRepo(object):
 
         for commit in args:
             self.cmd('cherry-pick', commit)
-            logger.info('cherry picked ' + commit )
+            logger.info('cherry picked ' + commit)
 
     def am(self, patches, repo=None, sign=False):
         cmd_base = 'curl -s {path} | git am --3way'
@@ -198,15 +201,15 @@ class GitRepo(object):
 
                 logger.info("applying {0}".format(path))
             elif re.search('[a-zA-Z]+', obj):
-                path = '/'.join([ repo, 'commit', obj ]) + '.patch'
+                path = '/'.join([repo, 'commit', obj]) + '.patch'
 
-                logger.info('merging commit {0} for {1} into {2}'.format(obj, repo, self.current_branch()))
+                logger.info('merging {0} for {1} into {2}'.format(obj, repo, self.current_branch()))
             else:
                 if repo is None:
                     logger.warning('not applying "{0}", because of missing repo'.format(obj))
                     continue
                 else:
-                    path = '/'.join([ repo, 'pull', obj ]) + '.patch'
+                    path = '/'.join([repo, 'pull', obj]) + '.patch'
                     logger.info("applying {0}".format(path))
 
             logger.info(cmd_base.format(path=path))

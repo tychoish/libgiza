@@ -24,9 +24,10 @@ import numbers
 
 logger = logging.getLogger('libgiza.app')
 
-from libgiza.pool import ThreadPool, ProcessPool, SerialPool, WorkerPool, EventPool
+import libgiza.pool
 from libgiza.task import Task, MapTask
 from libgiza.config import ConfigurationBase
+
 
 class BuildApp(object):
     """
@@ -40,8 +41,8 @@ class BuildApp(object):
     control task ordering.
 
     The results of all operations are accessible in the
-    :attr:`~giza.app.BuildApp.results`, which largely preserves the ordering of the
-    insertion of operations into the queue. Unlike the queue,
+    :attr:`~giza.app.BuildApp.results`, which largely preserves the ordering of
+    the insertion of operations into the queue. Unlike the queue,
     :attr:`~giza.app.BuildApp.results` contains the result of each operation in
     an embedded :class:`~giza.app.BuildApp()` in the order that each task was
     added to the embedded :class:`~giza.app.BuildApp()` instance.
@@ -67,13 +68,14 @@ class BuildApp(object):
         self.randomize = False
 
         self.pool_mapping = {
-            'thread': ThreadPool,
-            'process': ProcessPool,
-            'event': EventPool,
-            'serial': SerialPool
+            'thread': libgiza.pool.ThreadPool,
+            'process': libgiza.pool.ProcessPool,
+            'event': libgiza.pool.EventPool,
+            'serial': libgiza.pool.SerialPool
         }
 
-        self.pool_types = tuple([ self.pool_mapping[p] for p in self.pool_mapping])
+        self.pool_types = tuple([self.pool_mapping[p]
+                                 ofor p in self.pool_mapping])
 
         self.needs_rebuild = True
         self.root_app = True
@@ -199,7 +201,7 @@ class BuildApp(object):
                 pool = self.worker_pool
 
         if self.worker_pool is not None:
-            logger.debug('not creating a pool because one already exists. ({0}, {1})'.format(pool, type(pool)))
+            logger.debug('pool "{0}" exists, not creating new "{1}"'.format(pool, type(pool)))
             return
 
         if self.worker_pool is None:
@@ -213,7 +215,9 @@ class BuildApp(object):
                 self.worker_pool = self.pool_mapping[self.default_pool](self.pool_size)
         elif self.is_pool(self.worker_pool):
             return
-        elif self.conf is not None and pool in self.pool_types and isinstance(self.worker_pool, self.pool_mapping[pool]):
+        elif (self.conf is not None and
+              pool in self.pool_types and
+              isinstance(self.worker_pool, self.pool_mapping[pool])):
             self.close_pool()
             self.worker_pool = self.pool_mapping[pool](self.pool_size)
         else:
@@ -229,11 +233,11 @@ class BuildApp(object):
         if value in self.pool_mapping:
             return True
         else:
-           return False
+            return False
 
     @property
     def queue_has_apps(self):
-        num_apps = len([ True for t in self.queue if isinstance(t, BuildApp)])
+        num_apps = len([True for t in self.queue if isinstance(t, BuildApp)])
 
         if num_apps >= 1:
             return True
@@ -241,7 +245,9 @@ class BuildApp(object):
             return False
 
     def close_pool(self):
-        if self.is_pool(self.worker_pool) and not isinstance(self.worker_pool, SerialPool):
+        if (self.is_pool(self.worker_pool) and
+           not isinstance(self.worker_pool, libgiza.pool.SerialPool)):
+
             self.worker_pool.close()
             self.worker_pool = None
 
@@ -271,11 +277,11 @@ class BuildApp(object):
            :class:`~giza.task.Task()` object. You can pass the string ``task``
            or the class :class:`~giza.task.Task` to explicitly create a new
            Task, or pass an existing :class:`~giza.task.Task()` instance to add
-           that task to the :class:`~giza.app.BuildApp()` instance. You can also
-           pass the string ``app`` or the :class:`~giza.app.BuildApp` class, to
-           create and add new :class:`~giza.app.BuildApp()`: pass an existing
-           :class:`~giza.app.BuildApp()`  instance to add that that operation
-           grouping to the queue.
+           that task to the :class:`~giza.app.BuildApp()` instance. You can
+           also pass the string ``app`` or the :class:`~giza.app.BuildApp`
+           class, to create and add new :class:`~giza.app.BuildApp()`: pass an
+           existing :class:`~giza.app.BuildApp()` instance to add that that
+           operation grouping to the queue.
 
         :returns: A reference to a :class:`~giza.app.BuildApp()` or
            :class:`~giza.task.Task()` object in the :class:`~giza.app.BuildApp()`
@@ -339,7 +345,7 @@ class BuildApp(object):
             raise TypeError
 
     def _run_mixed_queue(self):
-        group = [ ]
+        group = []
 
         for task in self.queue:
             if not isinstance(task, BuildApp):

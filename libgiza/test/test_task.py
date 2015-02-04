@@ -18,6 +18,7 @@ from libgiza.task import MapTask, Task
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 
+
 class BaseTaskSuite(object):
     def test_configuration_object_validation_rejection(self):
         for i in [1, 'config', {'config': 1}]:
@@ -52,7 +53,7 @@ class BaseTaskSuite(object):
         self.assertIsNone(self.task._args)
         self.assertIsNone(self.task.args_type)
 
-        self.task.args = { 'foo': 1 }
+        self.task.args = {'foo': 1}
         self.assertEqual(self.task.args_type, 'kwargs')
 
     def test_args_type_setting_args(self):
@@ -103,6 +104,7 @@ class BaseTaskSuite(object):
 
         self.assertTrue(self.task.needs_rebuild)
 
+
 class TestTask(BaseTaskSuite, TestCase):
     @classmethod
     def setUp(self):
@@ -118,7 +120,7 @@ class TestTask(BaseTaskSuite, TestCase):
             print(iterable, start)
             return sum(iterable, start)
 
-        for i in (((1,2,3), 0), ([1,2,3], 0), {'iterable': [1,2,3], 'start': 0}):
+        for i in (((1, 2, 3), 0), ([1, 2, 3], 0), {'iterable': [1, 2, 3], 'start': 0}):
             t = self.Task()
 
             t.job = sum_func
@@ -126,6 +128,7 @@ class TestTask(BaseTaskSuite, TestCase):
             t.description = "test task: " + str(i)
 
             self.assertEqual(t.run(), 6)
+
 
 class TestMapTask(BaseTaskSuite, TestCase):
     @classmethod
@@ -139,8 +142,8 @@ class TestMapTask(BaseTaskSuite, TestCase):
 
     def test_running_map_task(self):
         t = self.Task()
-        t.iter = [ (i, i+10) for i in range(10) ]
+        t.iter = [(i, i+10) for i in range(10)]
         t.job = sum
 
-        for a,b in zip(t.run(), [10, 12, 14, 16, 18, 20, 22, 24, 26, 28]):
-            self.assertEqual(a,b)
+        for a, b in zip(t.run(), [10, 12, 14, 16, 18, 20, 22, 24, 26, 28]):
+            self.assertEqual(a, b)

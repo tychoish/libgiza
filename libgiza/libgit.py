@@ -19,7 +19,10 @@ logger = logging.getLogger('giza.libgit')
 
 import pygit2
 
-class GitError(Exception): pass
+
+class GitError(Exception):
+    pass
+
 
 class GitRepo(object):
     def __init__(self, path=None):
@@ -43,7 +46,7 @@ class GitRepo(object):
         raise NotImplementedError
 
     def remotes(self):
-        return [ r.name for r in self.repo.remotes ]
+        return [r.name for r in self.repo.remotes]
 
     def author_email(self, sha=None):
         commit = self.repo.get(sha, None)

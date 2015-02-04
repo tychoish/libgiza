@@ -37,6 +37,7 @@ from libgiza.config import RecursiveConfigurationBase, ConfigurationBase
 if sys.version_info >= (3, 0):
     basestring = str
 
+
 class InheritableContentError(Exception):
     """
     Exception used by inheritance code to indicate a problem resolving
@@ -78,8 +79,8 @@ class InheritanceReference(RecursiveConfigurationBase):
 
     @file.setter
     def file(self, value):
-        fns = [ os.path.join(os.getcwd(), value) ]
-        fns.extend([os.path.join(d[0], value) for d in os.walk(os.getcwd()) ])
+        fns = [os.path.join(os.getcwd(), value)]
+        fns.extend([os.path.join(d[0], value) for d in os.walk(os.getcwd())])
 
         for fn in fns:
             if os.path.isfile(fn):
@@ -88,6 +89,7 @@ class InheritanceReference(RecursiveConfigurationBase):
 
         if 'file' not in self.state:
             raise TypeError('file named {0} does not exist'.format(value))
+
 
 class InheritableContentBase(RecursiveConfigurationBase):
     """
@@ -216,7 +218,8 @@ class InheritableContentBase(RecursiveConfigurationBase):
                 logger.error(e)
 
         if not self.is_resolved():
-            m = 'cannot find {0} and ref "{1}" do not exist'.format(self.source.file, self.source.ref)
+            m = 'cannot find {0} and ref "{1}" do not exist'.format(self.source.file,
+                                                                    self.source.ref)
             logger.error(m)
             raise InheritableContentError(m)
 
@@ -252,7 +255,6 @@ class InheritableContentBase(RecursiveConfigurationBase):
 
                     self.state[key].render()
 
-##############################
 
 class DataContentBase(RecursiveConfigurationBase):
     """
@@ -260,10 +262,10 @@ class DataContentBase(RecursiveConfigurationBase):
     """
 
     content_class = InheritableContentBase
-    edition_check = staticmethod(lambda x,y: True)
+    edition_check = staticmethod(lambda x, y: True)
 
     def __init__(self, src, data, conf):
-        self._state = { 'content': { } }
+        self._state = {'content': {}}
         self._content = self._state['content']
         self._conf = None
         self._ordering = []
@@ -304,7 +306,7 @@ class DataContentBase(RecursiveConfigurationBase):
     def ingest(self, src):
         if not isinstance(src, list) and os.path.isfile(src):
             with open(src, 'r') as f:
-                src = [ doc for doc in yaml.safe_load_all(f) ]
+                src = [doc for doc in yaml.safe_load_all(f)]
 
         for doc in src:
             if self.edition_check(doc, self.conf) is False:
@@ -372,8 +374,8 @@ class DataContentBase(RecursiveConfigurationBase):
             raise InheritableContentError(m)
 
     def is_resolved(self):
-        unresolved = [ 1 for exmp in self.content.values()
-                       if not exmp.is_resolved() ]
+        unresolved = [1 for exmp in self.content.values()
+                      if not exmp.is_resolved()]
 
         if sum(unresolved) > 0:
             return False
@@ -389,7 +391,8 @@ class DataContentBase(RecursiveConfigurationBase):
     def ordered_content(self):
         """
         Generator of content items in order. If items have a ``number`` member,
-        then we sort in this order. Otherwise, we return in the order that they were specified in the file.
+        then we sort in this order. Otherwise, we return in the order that they
+        were specified in the file.
         """
         def sorter(ref_a, ref_b):
             return cmp(self.fetch(ref_a).number, self.fetch(ref_b).number)
@@ -406,6 +409,7 @@ class DataContentBase(RecursiveConfigurationBase):
 
         for ref in self._ordering:
             yield self.fetch(ref)
+
 
 class DataCache(RecursiveConfigurationBase):
     """
@@ -439,9 +443,9 @@ class DataCache(RecursiveConfigurationBase):
         self.cache[fn] = []
 
     def ingest(self, files):
-        setup = [ self._clear_cache(fn)
-                  for fn in files
-                  if fn not in self.cache ]
+        setup = [self._clear_cache(fn)
+                 for fn in files
+                 if fn not in self.cache]
 
         logger.debug('setup cache for {0} files'.format(len(setup)))
 
@@ -451,7 +455,7 @@ class DataCache(RecursiveConfigurationBase):
     def add_file(self, fn):
         if fn not in self.cache or self.cache[fn] == []:
             with open(fn, 'r') as f:
-                data = [ doc for doc in yaml.safe_load_all(f) ]
+                data = [doc for doc in yaml.safe_load_all(f)]
 
             self.cache[fn] = self.content_class(data, self, self.conf)
         else:
@@ -468,9 +472,9 @@ class DataCache(RecursiveConfigurationBase):
                 self.add_file(fn)
                 return self.cache[fn].fetch(ref)
             else:
-                logger.warning("file ({0}) doesn't exit at given path, crawling directory".format(fn))
-                fns = [ os.path.join(os.getcwd(), fn) ]
-                fns.extend([os.path.join(d[0], fn) for d in os.walk(os.getcwd()) ])
+                logger.warning("file ({0}) doesn't exist, crawling directory".format(fn))
+                fns = [os.path.join(os.getcwd(), fn)]
+                fns.extend([os.path.join(d[0], fn) for d in os.walk(os.getcwd())])
 
                 for filen in fns:
                     if os.path.isfile(filen):

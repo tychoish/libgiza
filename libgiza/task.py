@@ -32,6 +32,7 @@ from libgiza.config import ConfigurationBase
 if sys.version_info >= (3, 0):
     basestring = str
 
+
 class Task(object):
     """
     Provides a common interface for defining an operational unit of work in a
@@ -194,6 +195,7 @@ class Task(object):
         logger.debug('completed running task {0}, {1}'.format(self.task_id, self.description))
         return r
 
+
 class MapTask(Task):
     """
     A variant of :class:`~giza.task.Task()` that defines a task that like the
@@ -203,7 +205,7 @@ class MapTask(Task):
 
     def __init__(self, job=None, description=None, target=None, dependency=None):
         super(MapTask, self).__init__(job=job, description=description,
-                                   target=target, dependency=dependency)
+                                      target=target, dependency=dependency)
         self._iter = []
 
     @property
@@ -220,7 +222,9 @@ class MapTask(Task):
     def run(self):
         return map(self.job, self.iter)
 
-############### Dependency Checking ###############
+
+# Dependency Checking
+
 
 def check_dependency(target, dependency):
     """

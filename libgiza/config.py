@@ -21,6 +21,7 @@ import yaml
 
 logger = logging.getLogger('libgiza.config')
 
+
 class ConfigurationBase(object):
     _option_registry = []
     _version = 0
@@ -53,7 +54,7 @@ class ConfigurationBase(object):
                 else:
                     logger.error("file {0} has unknown data format".format(input_obj))
         else:
-            msg = 'cannot ingest Configuration obj from object with type {0}'.format(type(input_obj))
+            msg = 'cannot ingest Configuration obj from {0} object'.format(type(input_obj))
             logger.critical(msg)
             raise TypeError(msg)
 
@@ -112,10 +113,10 @@ class ConfigurationBase(object):
             if isinstance(v, ConfigurationBase):
                 return v.dict(safe)
             elif isinstance(v, list) and len(v) > 0 and isinstance(v[0], ConfigurationBase):
-                return [i.dict() for i in v ]
+                return [i.dict() for i in v]
             elif isinstance(v, dict):
                 sub_d = {}
-                for key,value, in v.items():
+                for key, value, in v.items():
                     sub_d[key] = get_dict_value(value)
                 return sub_d
             elif self._is_value_type(v):
@@ -169,6 +170,7 @@ class ConfigurationBase(object):
         yield data
 
         data.write(fn)
+
 
 class RecursiveConfigurationBase(ConfigurationBase):
     def __init__(self, obj, conf):

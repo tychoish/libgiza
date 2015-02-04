@@ -20,6 +20,7 @@ from libgiza.task import Task
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 
+
 class CommonAppSuite(object):
     def test_add_make_test_default(self):
         self.assertEqual(self.app.queue, [])
@@ -141,7 +142,7 @@ class CommonAppSuite(object):
         t = Task()
         t.job = sum
         t.description = 'test task'
-        t.args = [[ 1 , 2 ], 0]
+        t.args = [[1, 2], 0]
 
         self.app._run_single(t)
         self.assertEqual(self.app.results[0], 3)
@@ -153,7 +154,7 @@ class CommonAppSuite(object):
         t = self.app.add('task')
 
         t.job = sum
-        t.args = [[ 1 , 2 ], 0]
+        t.args = [[1, 2], 0]
         t.description = 'test task'
 
         self.app.run()
@@ -169,7 +170,7 @@ class CommonAppSuite(object):
         t = app.add('task')
         t.job = sum
         t.description = 'test task'
-        t.args = [[ 1 , 2 ], 0]
+        t.args = [[1, 2], 0]
 
         self.app.run()
         self.assertEqual(self.app.results[0], 3)
@@ -184,11 +185,10 @@ class CommonAppSuite(object):
             t = self.app.add('task')
             t.job = sum
             if inc in (4, 7, 9):
-                t.args = [[ 1 , 2, inc ], 0]
+                t.args = [[1, 2, inc], 0]
             else:
-                t.args = [[ 20 , 2, inc - 10 ], 0]
+                t.args = [[20, 2, inc - 10], 0]
             t.description = 'test task'
-
 
         self.app.run()
 
@@ -203,7 +203,7 @@ class CommonAppSuite(object):
         for _ in range(10):
             t = app.add('task')
             t.job = sum
-            t.args = [[ 1 , 2 ], 0]
+            t.args = [[1, 2], 0]
             t.description = 'test task'
 
         self.app.run()
@@ -262,9 +262,8 @@ class CommonAppSuite(object):
             for _ in range(10):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
-
 
         self.app.run()
 
@@ -280,7 +279,7 @@ class CommonAppSuite(object):
         for _ in range(10):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,2], 0]
+            t.args = [[1, 2], 0]
             t.description = 'test task'
 
         for _ in range(10):
@@ -288,7 +287,7 @@ class CommonAppSuite(object):
             for _ in range(10):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
         self.app.run()
@@ -307,7 +306,7 @@ class CommonAppSuite(object):
             for _ in range(10):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
         self.app._run_mixed_queue()
@@ -324,7 +323,7 @@ class CommonAppSuite(object):
         for _ in range(10):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,2], 0]
+            t.args = [[1, 2], 0]
             t.description = 'test task'
 
         for _ in range(10):
@@ -332,7 +331,7 @@ class CommonAppSuite(object):
             for _ in range(10):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
         self.app._run_mixed_queue()
@@ -349,19 +348,19 @@ class CommonAppSuite(object):
         for _ in range(5):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,2], 0]
+            t.args = [[1, 2], 0]
             t.description = 'test task'
 
         for _ in range(5):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[2,2], 0]
+            t.args = [[2, 2], 0]
             t.description = 'test task'
 
         self.app.run()
 
         self.assertEqual(len(self.app.queue), 0)
-        self.assertEqual(self.app.results, [ 3, 3, 3, 3, 3, 4, 4, 4, 4, 4 ])
+        self.assertEqual(self.app.results, [3, 3, 3, 3, 3, 4, 4, 4, 4, 4])
 
     def test_task_results_ordering_with_apps(self):
         self.assertEqual(self.app.queue, [])
@@ -372,23 +371,21 @@ class CommonAppSuite(object):
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[2,2], 0]
+                t.args = [[2, 2], 0]
                 t.description = 'test task'
 
         self.app.run()
 
         self.assertEqual(self.app.results,
-                         [
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4
-                         ])
+                         [3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4])
 
     def test_task_results_ordering_varried_with_apps(self):
         self.assertEqual(self.app.queue, [])
@@ -405,13 +402,13 @@ class CommonAppSuite(object):
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[2,2], 0]
+                t.args = [[2, 2], 0]
                 t.description = 'test task'
 
         app = self.app.add('app')
@@ -422,18 +419,17 @@ class CommonAppSuite(object):
         for _ in range(5):
             t = app.add('task')
             t.job = sum
-            t.args = [[2,2], 0]
+            t.args = [[2, 2], 0]
             t.description = 'test task'
 
         self.app.run()
 
         self.assertEqual(self.app.results,
-                         [   9,
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                             10, 4, 4, 4, 4, 4
-                         ])
+                         [9,
+                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                          10, 4, 4, 4, 4, 4])
 
     def test_task_results_lack_of_order(self):
         self.assertEqual(self.app.queue, [])
@@ -442,13 +438,13 @@ class CommonAppSuite(object):
         for _ in range(5):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,2], 0]
+            t.args = [[1, 2], 0]
             t.description = 'test task'
 
         for _ in range(5):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[2,2], 0]
+            t.args = [[2, 2], 0]
             t.description = 'test task'
 
         self.app.run()
@@ -456,12 +452,9 @@ class CommonAppSuite(object):
         # there's a small chance that this could randomly fail without
         # indicating a correctness bug.
         self.assertNotEqual(self.app.results,
-                            [
-                                3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                                3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                                3, 3, 3, 3, 3, 4, 4, 4, 4, 4
-                            ])
-
+                            [3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                             3, 3, 3, 3, 3, 4, 4, 4, 4, 4])
 
     def test_task_results_task_and_apps0(self):
         self.assertEqual(self.app.queue, [])
@@ -470,7 +463,7 @@ class CommonAppSuite(object):
         for _ in range(6):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
         for _ in range(3):
@@ -478,38 +471,36 @@ class CommonAppSuite(object):
             for _ in range(5):
                 t = app0.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
             app1 = self.app.add('app')
             for _ in range(5):
                 t = app1.add('task')
                 t.job = sum
-                t.args = [[2,2], 0]
+                t.args = [[2, 2], 0]
                 t.description = 'test task'
 
         for _ in range(10):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
         self.app.run()
 
         print(self.app.results)
         self.assertEqual(self.app.results,
-                            [
-                                2, 2, 2, 2, 2, 2,
-                                3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
-                                3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
-                                3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
-                                2, 2, 2, 2, 2, 2, 2, 2, 2, 2
-                            ])
+                         [2, 2, 2, 2, 2, 2,
+                          3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
+                          3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
+                          2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
 
     def test_task_results_task_and_apps1(self):
         self.assertEqual(self.app.queue, [])
@@ -518,7 +509,7 @@ class CommonAppSuite(object):
         for _ in range(6):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
         for _ in range(3):
@@ -526,24 +517,24 @@ class CommonAppSuite(object):
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[1,2], 0]
+                t.args = [[1, 2], 0]
                 t.description = 'test task'
 
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
             for _ in range(5):
                 t = app.add('task')
                 t.job = sum
-                t.args = [[2,2], 0]
+                t.args = [[2, 2], 0]
                 t.description = 'test task'
 
         for _ in range(10):
             t = self.app.add('task')
             t.job = sum
-            t.args = [[1,1], 0]
+            t.args = [[1, 1], 0]
             t.description = 'test task'
 
         self.app.run()
@@ -564,7 +555,7 @@ class CommonAppSuite(object):
         app = BuildApp()
         t = app.add('task')
         t.job = sum
-        t.args = [[ 1 , 2 ], 0]
+        t.args = [[1, 2], 0]
         t.description = 'test task'
 
         self.app._run_single(app)
@@ -580,7 +571,7 @@ class CommonAppSuite(object):
             t = app.add('task')
             t.job = sum
             t.description = 'test task'
-            t.args = [[ 1 , 2 ], 0]
+            t.args = [[1, 2], 0]
 
         self.app._run_single(app)
         self.assertEqual(len(self.app.results), 10)
@@ -602,7 +593,6 @@ class CommonAppSuite(object):
         self.assertIs(app, self.app.queue[0])
         self.assertIsNot(app, BuildApp(self.c))
         self.assertIsNot(BuildApp(self.c), self.app.queue[0])
-
 
     def test_pool_setter_existing_pool_thread(self):
         self.assertIsNone(self.app.worker_pool)
@@ -632,6 +622,7 @@ class CommonAppSuite(object):
         self.assertFalse(self.app.is_pool(self.c))
         self.assertFalse(self.app.is_pool(self.app))
 
+
 class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
     @classmethod
     def setUp(self):
@@ -660,6 +651,7 @@ class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
         self.assertIsNotNone(t.conf)
         self.assertIs(self.c, self.app.queue[0].conf)
         self.assertIs(self.c, t.conf)
+
 
 class TestBuildAppMinimalConfig(CommonAppSuite, TestCase):
     @classmethod

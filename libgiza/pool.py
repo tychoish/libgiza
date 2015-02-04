@@ -29,8 +29,14 @@ logger = logging.getLogger('giza.pool')
 
 from libgiza.task import MapTask
 
-class PoolConfigurationError(Exception): pass
-class PoolResultsError(Exception): pass
+
+class PoolConfigurationError(Exception):
+    pass
+
+
+class PoolResultsError(Exception):
+    pass
+
 
 def run_task(task):
     "helper to call run method on task so entire operation can be pickled for process pool support"
@@ -41,6 +47,7 @@ def run_task(task):
         logger.error('task received interrupt.')
 
     return result
+
 
 class WorkerPool(object):
     @property
@@ -122,11 +129,12 @@ class WorkerPool(object):
                 if job.description is None:
                     logger.error("encountered error '{0}' in {1}".format(e, job.job))
                 else:
-                    logger.error("'{0}' encountered error: {1}, exiting.".format(job.description, e))
+                    logger.error("'{0}' encountered error: {1}, exiting".format(job.description, e))
 
             raise PoolResultsError(error_list)
 
         return retval
+
 
 class SerialPool(object):
     def __init__(self, pool_size=0):
@@ -155,11 +163,13 @@ class SerialPool(object):
 
     async_runner = runner
 
+
 class ThreadPool(WorkerPool):
     def __init__(self, pool_size=None):
         self.pool_size = pool_size
         self.p = multiprocessing.dummy.Pool(self.pool_size)
         logger.info('new thread pool object')
+
 
 class ProcessPool(WorkerPool):
     def __init__(self, pool_size=None):
@@ -167,11 +177,12 @@ class ProcessPool(WorkerPool):
         self.p = multiprocessing.Pool(self.pool_size)
         logger.info('new process pool object')
 
+
 class EventPool(WorkerPool):
     def __init__(self, pool_size=None):
         self.pool_size = pool_size
 
-        if sys.version_info >= (3,0):
+        if sys.version_info >= (3, 0):
             logger.error('gevent is not supported on this platform, using threads')
             self.p = multiprocessing.dummy.Pool(self.pool_size)
         else:

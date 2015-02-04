@@ -14,6 +14,7 @@
 
 import copy
 
+
 def get_dependency_graph(app):
     g = {}
 
@@ -36,7 +37,6 @@ def get_dependency_graph(app):
                   task.dependency if hasattr(task, 'dependency') else "no dep",
                   task.job if hasattr(task, 'job') else "no job",
                   task.description if hasattr(task, 'description') else "no text")
-
 
         if isinstance(task.dependency, list):
             g[task.target].extend(task.dependency)

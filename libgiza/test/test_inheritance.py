@@ -16,26 +16,27 @@ import os
 
 from unittest import TestCase
 
-from libgiza.inheritance import DataContentBase, DataCache, InheritableContentError, InheritableContentBase
+from libgiza.inheritance import (DataContentBase, DataCache,
+                                 InheritableContentError, InheritableContentBase)
 
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 from libgiza.config import RecursiveConfigurationBase
 
+
 def get_inheritance_data_files():
-    return [
-        os.path.abspath(os.path.join(os.path.dirname(__file__), 'data-inheritance', fn))
-        for fn in ( 'example-add-one.yaml', 'example-add-two.yaml',
-                    'example-add-three.yaml' )
-    ]
+    return [os.path.abspath(os.path.join(os.path.dirname(__file__), 'data-inheritance', fn))
+            for fn in ('example-add-one.yaml', 'example-add-two.yaml',
+                       'example-add-three.yaml')]
+
 
 class TestDataCache(TestCase):
     @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
-        self.c.paths = { 'includes':
-                         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data-inheritance')}
+        self.c.paths = {'includes': os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                                 'data-inheritance')}
 
         self.data = DataCache([], self.c)
 
@@ -125,13 +126,14 @@ class TestDataCache(TestCase):
                     content = self.data.fetch(fn, 1)
                 self.assertNotIn(fn, self.data)
 
+
 class TestDataContentBase(TestCase):
     @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
-        self.c.paths = { 'includes': 'data-inheritance',
-                         'projectroot': os.path.abspath(os.path.dirname(__file__))}
+        self.c.paths = {'includes': 'data-inheritance',
+                        'projectroot': os.path.abspath(os.path.dirname(__file__))}
 
         self.content_fn = get_inheritance_data_files()[0]
 
@@ -159,7 +161,7 @@ class TestDataContentBase(TestCase):
         for idx in self.content.content:
             compared = self.data.fetch(self.content_fn, idx)
             for key in self.content.content[idx].state:
-                self.assertEqual(self.content.content[idx].state[key], getattr(compared,key))
+                self.assertEqual(self.content.content[idx].state[key], getattr(compared, key))
 
     def test_resolve_checker(self):
         if isinstance(self.content, dict):
@@ -168,13 +170,14 @@ class TestDataContentBase(TestCase):
         else:
             self.assertIsInstance(self.content.is_resolved(), bool)
 
+
 class TestInheritedContentResolution(TestCase):
     @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
-        self.c.paths = { 'includes':
-                         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data-inheritance')}
+        self.c.paths = {'includes': os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                                 'data-inheritance')}
 
         self.data = DataCache(get_inheritance_data_files(), self.c)
 
@@ -197,6 +200,7 @@ class TestInheritedContentResolution(TestCase):
                 if 'source' in doc:
                     self.assertTrue(doc.source.resolved)
 
+
 class TestBaseTemplateRendering(TestCase):
     @classmethod
     def setUp(self):
@@ -204,7 +208,7 @@ class TestBaseTemplateRendering(TestCase):
         self.c.runstate = RuntimeStateConfig()
 
         self.data = InheritableContentBase({}, self.c)
-        self.data.replacement = { 'state': 'foo' }
+        self.data.replacement = {'state': 'foo'}
 
     def test_replacement(self):
         self.data.pre = 'this is a {{state}} test'
