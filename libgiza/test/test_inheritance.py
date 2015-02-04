@@ -134,7 +134,6 @@ class TestDataContentBase(TestCase):
                          'projectroot': os.path.abspath(os.path.dirname(__file__))}
 
         self.content_fn = get_inheritance_data_files()[0]
-        print self.content_fn
 
         self.data = DataCache([self.content_fn], self.c)
         self.content = self.data.cache[self.content_fn]
@@ -160,7 +159,6 @@ class TestDataContentBase(TestCase):
         for idx in self.content.content:
             compared = self.data.fetch(self.content_fn, idx)
             for key in self.content.content[idx].state:
-                print(type(key))
                 self.assertEqual(self.content.content[idx].state[key], getattr(compared,key))
 
     def test_resolve_checker(self):

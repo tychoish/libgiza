@@ -87,7 +87,6 @@ class InheritanceReference(RecursiveConfigurationBase):
                 break
 
         if 'file' not in self.state:
-            print 'this is bad'
             raise TypeError('file named {0} does not exist'.format(value))
 
 class InheritableContentBase(RecursiveConfigurationBase):
@@ -215,8 +214,6 @@ class InheritableContentBase(RecursiveConfigurationBase):
                 return True
             except InheritableContentError as e:
                 logger.error(e)
-        else:
-            print self.source.file, data.cache.keys()
 
         if not self.is_resolved():
             m = 'cannot find {0} and ref "{1}" do not exist'.format(self.source.file, self.source.ref)
@@ -463,7 +460,6 @@ class DataCache(RecursiveConfigurationBase):
     def fetch(self, fn, ref):
         if fn in self.cache:
             if self.cache[fn] == []:
-                print('herehehe')
                 self.add_file(fn)
             return self.cache[fn].fetch(ref)
         else:
