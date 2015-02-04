@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import logging
-from contextlib import contextmanager
+import contextlib
 
 logger = logging.getLogger('giza.libgit')
 
@@ -57,7 +58,7 @@ class GitRepo(object):
             return commit.author
 
     def branch_exists(self, name):
-        return name in repo.listall_branches()
+        return name in self.repo.listall_branches()
 
     def branch_file(self, path, branch="master"):
         ref = self.repo.lookup_branch(branch)
@@ -67,7 +68,7 @@ class GitRepo(object):
         return self.repo[commit.tree[path].id]
 
     def checkout(self, ref):
-        self.repo.checkout(refnmae='HEAD', ref)
+        self.repo.checkout(refnmae=ref)
 
         return True
 
@@ -107,6 +108,6 @@ class GitRepo(object):
     def am(self, patches, repo=None, sign=False):
         pass
 
-    @contextmanager
+    @contextlib.contextmanager
     def branch(self, name):
         pass

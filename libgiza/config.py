@@ -152,13 +152,15 @@ class ConfigurationBase(object):
             with open(fn, 'w') as f:
                 json.dump(self.dict(safe=False), f, indent=3, sort_keys=True)
         elif fn.endswith('yaml'):
-            write_yaml(self.dict(safe=False), fn)
+            with open(fn, 'w') as f:
+                yaml.safe_dump_all(self.dict(safe=False), f, default_flow_style=False)
 
     @classmethod
     @contextlib.contextmanager
     def persisting(cls, fn, override=False):
         if not os.path.isfile(fn):
-            write_json({}, fn)
+            with open(fn, 'w') as f:
+                json.dump({}, f, indent=3)
 
         if override is False:
             data = cls(fn)

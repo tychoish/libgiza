@@ -25,7 +25,6 @@ import collections
 import logging
 import os.path
 import sys
-import copy
 
 logger = logging.getLogger('libgiza.inheritance')
 
@@ -497,3 +496,36 @@ class DataCache(RecursiveConfigurationBase):
                     continue
                 else:
                     yield fn, data
+
+
+class TitleData(ConfigurationBase):
+    _option_registry = ['text']
+
+    level_characters = {"=": 1,
+                        "-": 2,
+                        "~": 3,
+                        "`": 4,
+                        "^": 5,
+                        "'": 6}
+
+    @property
+    def character(self):
+        return self.level
+
+    @character.setter
+    def character(self, value):
+        self.level = self.level_characters[value]
+
+    @property
+    def level(self):
+        if 'level' not in self.state:
+            return 3
+        else:
+            return self.state['level']
+
+    @level.setter
+    def level(self, value):
+        if isinstance(value, int):
+            self.state['level'] = value
+        else:
+            raise TypeError

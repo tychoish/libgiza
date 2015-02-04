@@ -75,7 +75,7 @@ class BuildApp(object):
         }
 
         self.pool_types = tuple([self.pool_mapping[p]
-                                 ofor p in self.pool_mapping])
+                                 for p in self.pool_mapping])
 
         self.needs_rebuild = True
         self.root_app = True

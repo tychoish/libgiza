@@ -21,7 +21,6 @@ from libgiza.inheritance import (DataContentBase, DataCache,
 
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
-from libgiza.config import RecursiveConfigurationBase
 
 
 def get_inheritance_data_files():
@@ -123,7 +122,7 @@ class TestDataCache(TestCase):
         for fn in files:
             if not os.path.isfile(fn):
                 with self.assertRaises(InheritableContentError):
-                    content = self.data.fetch(fn, 1)
+                    self.data.fetch(fn, 1)
                 self.assertNotIn(fn, self.data)
 
 

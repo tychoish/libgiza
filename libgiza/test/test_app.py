@@ -58,25 +58,25 @@ class CommonAppSuite(object):
 
     def test_pool_setter_process(self):
         self.assertIsNone(self.app.worker_pool)
-        a = self.app.pool = 'process'
+        self.app.pool = 'process'
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ProcessPool)
 
     def test_pool_setter_thread(self):
         self.assertIsNone(self.app.worker_pool)
-        a = self.app.pool = 'thread'
+        self.app.pool = 'thread'
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ThreadPool)
 
     def test_pool_setter_serial(self):
         self.assertIsNone(self.app.worker_pool)
-        a = self.app.pool = 'serial'
+        self.app.pool = 'serial'
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, SerialPool)
 
     def test_pool_setter_process_by_ref(self):
         self.assertIsNone(self.app.worker_pool)
-        a = self.app.pool = ProcessPool
+        self.app.pool = ProcessPool
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ProcessPool)
 
@@ -94,7 +94,7 @@ class CommonAppSuite(object):
 
     def test_pool_setter_invalid_input(self):
         self.assertIsNone(self.app.worker_pool)
-        a = self.app.pool = 1
+        self.app.pool = 1
 
         self.assertIn(type(self.app.pool), self.app.pool_mapping.values())
 
@@ -585,14 +585,6 @@ class CommonAppSuite(object):
         self.assertIs(app, self.app.queue[0])
         self.assertIsNot(app, BuildApp())
         self.assertIsNot(BuildApp(), self.app.queue[0])
-
-    def test_add_existing_app_object(self):
-        self.assertEqual(self.app.queue, [])
-        app = BuildApp(self.c)
-        self.app.add(app)
-        self.assertIs(app, self.app.queue[0])
-        self.assertIsNot(app, BuildApp(self.c))
-        self.assertIsNot(BuildApp(self.c), self.app.queue[0])
 
     def test_pool_setter_existing_pool_thread(self):
         self.assertIsNone(self.app.worker_pool)
