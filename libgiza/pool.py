@@ -19,10 +19,11 @@ functionality, while additional sub-classes use different parallelism
 mechanisms.
 """
 
+import logging
 import multiprocessing
 import multiprocessing.dummy
-import logging
 import numbers
+import sys
 
 logger = logging.getLogger('giza.pool')
 
@@ -170,10 +171,14 @@ class EventPool(WorkerPool):
     def __init__(self, pool_size=None):
         self.pool_size = pool_size
 
-        try:
-            import gevent.pool
-        except ImportError:
-            raise PoolConfigurationError('gevent is not available')
-
-        self.p = gevent.pool.Pool(self.pool_size)
-        logger.info('new event pool object')
+        if sys.version_info >= (3,0):
+            logger.error('gevent is not supported on this platform, using threads')
+            self.p = multiprocessing.dummy.Pool(self.pool_size)
+        else:
+            try:
+                import gevent.pool
+                self.p = gevent.pool.Pool(self.pool_size)
+                logger.info('new event pool object')
+            except ImportError:
+                logger.error('gevent is not supported on this system, using threads')
+                self.p = multiprocessing.dummy.Pool(self.pool_size)

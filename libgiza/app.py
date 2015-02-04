@@ -72,6 +72,7 @@ class BuildApp(object):
             'event': EventPool,
             'serial': SerialPool
         }
+
         self.pool_types = tuple([ self.pool_mapping[p] for p in self.pool_mapping])
 
         self.needs_rebuild = True
@@ -155,7 +156,7 @@ class BuildApp(object):
         if self._default_pool is None:
             if self.conf is None:
                 logger.warning('pool type not specified, choosing at random')
-                return random.choice(self.pool_mapping.keys())
+                return random.choice(list(self.pool_mapping.keys()))
             else:
                 logger.warning('deprecated use of conf object in app setup for pool type')
                 self._default_pool = self.conf.runstate.runner
