@@ -14,9 +14,9 @@
 
 from unittest import TestCase
 
-from giza.core.app import BuildApp
-from giza.core.pool import ThreadPool, ProcessPool, SerialPool
-from giza.core.task import Task
+from libgiza.app import BuildApp
+from libgiza.pool import ThreadPool, ProcessPool, SerialPool
+from libgiza.task import Task
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 

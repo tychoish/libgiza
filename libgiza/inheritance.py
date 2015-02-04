@@ -78,8 +78,13 @@ class InheritanceReference(RecursiveConfigurationBase):
 
     @file.setter
     def file(self, value):
-        if os.path.exists(value):
-            self.state['file'] = value
+        fns = [ os.path.join(os.getcwd(), value) ]
+        fns.extend([os.path.join(d[0], value) for d in os.walk(os.getcwd()) ])
+
+        for fn in fns:
+            if os.path.isfile(fn):
+                self.state['file'] = value
+                break
 
         if 'file' not in self.state:
             print 'this is bad'
@@ -166,7 +171,14 @@ class InheritableContentBase(RecursiveConfigurationBase):
 
     def _is_resolveable(self, data):
         try:
-            return not self.is_resolved() and self.source.file in data.cache
+            if self.source.file in data.cache:
+                return True
+            else:
+                for key in data.cache.keys():
+                    if key.endswith(self.source.file):
+                        return True
+
+                return False
         except AttributeError:
             logger.warning(str(data) + ' is not resolvable')
             return False
@@ -178,6 +190,9 @@ class InheritableContentBase(RecursiveConfigurationBase):
             return False
 
     def resolve(self, data):
+        if self.is_resolved() is True:
+            return True
+
         if self._is_resolveable(data):
             try:
                 base = copy.deepcopy(data.fetch(self.source.file, self.source.ref))
@@ -200,6 +215,8 @@ class InheritableContentBase(RecursiveConfigurationBase):
                 return True
             except InheritableContentError as e:
                 logger.error(e)
+        else:
+            print self.source.file, data.cache.keys()
 
         if not self.is_resolved():
             m = 'cannot find {0} and ref "{1}" do not exist'.format(self.source.file, self.source.ref)
@@ -393,7 +410,6 @@ class DataContentBase(RecursiveConfigurationBase):
         for ref in self._ordering:
             yield self.fetch(ref)
 
-
 class DataCache(RecursiveConfigurationBase):
     """
     Represents a group of related files that hold similar kinds of structured
@@ -445,17 +461,30 @@ class DataCache(RecursiveConfigurationBase):
             logger.debug('populated file {0} exists in the cache'.format(fn))
 
     def fetch(self, fn, ref):
-        if fn not in self.cache:
+        if fn in self.cache:
+            if self.cache[fn] == []:
+                print('herehehe')
+                self.add_file(fn)
+            return self.cache[fn].fetch(ref)
+        else:
             logger.error('file "{0}" is not included.'.format(fn))
             if os.path.isfile(fn):
                 self.add_file(fn)
+                return self.cache[fn].fetch(ref)
             else:
-                raise InheritableContentError
+                logger.warning("file ({0}) doesn't exit at given path, crawling directory".format(fn))
+                fns = [ os.path.join(os.getcwd(), fn) ]
+                fns.extend([os.path.join(d[0], fn) for d in os.walk(os.getcwd()) ])
 
-        if self.cache[fn] == []:
-            self.add_file(fn)
+                for filen in fns:
+                    if os.path.isfile(filen):
+                        self.add_file(filen)
+                        break
 
-        return self.cache[fn].fetch(ref)
+                if filen in self.cache:
+                    return self.cache[filen].fetch(ref)
+                else:
+                    raise InheritableContentError('cannot resolve: {0} {1}'.format(fn, ref))
 
     def file_iter(self):
         for fn in self.cache:

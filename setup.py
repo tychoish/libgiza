@@ -3,7 +3,12 @@ import libgiza
 from setuptools import setup, find_packages
 
 REQUIRES = [
-    'jinja2', 'pyyaml',
+    'jinja2',
+    'pyyaml',
+]
+
+TEST_REQUIRES = [
+    'giza'
 ]
 
 setup(
@@ -16,6 +21,7 @@ setup(
     url='http://github.com/tychoish/libgiza/',
     packages=find_packages(),
     test_suite=None,
+    tests_require=TEST_REQUIRES,
     install_requires=REQUIRES,
     classifiers=[
         'Environment :: Console',
@@ -27,4 +33,4 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Build Tools',
     ],
-    )
+)

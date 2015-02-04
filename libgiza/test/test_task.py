@@ -14,7 +14,7 @@
 
 from unittest import TestCase
 
-from giza.core.task import MapTask, Task
+from libgiza.task import MapTask, Task
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 

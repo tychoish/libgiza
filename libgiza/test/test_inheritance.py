@@ -16,19 +16,11 @@ import os
 
 from unittest import TestCase
 
-from giza.core.inheritance import DataContentBase, DataCache, InheritableContentError, InheritableContentBase
+from libgiza.inheritance import DataContentBase, DataCache, InheritableContentError, InheritableContentBase
 
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
-from giza.core.config import RecursiveConfigurationBase
-
-class DummyRecord(InheritableContentBase):
-    _option_registry = ['pre', 'post', 'final', 'ref', 'title', 'content', 'edition', 'operation', 'results']
-
-class DummyContent(DataContentBase):
-    content_class = DummyRecord
-class DummyCache(DataCache):
-    content_class = DummyContent
+from libgiza.config import RecursiveConfigurationBase
 
 def get_inheritance_data_files():
     return [
@@ -45,11 +37,11 @@ class TestDataCache(TestCase):
         self.c.paths = { 'includes':
                          os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data-inheritance')}
 
-        self.data = DummyCache([], self.c)
+        self.data = DataCache([], self.c)
 
     def test_content_class_default(self):
         self.assertEqual(self.data.cache, {})
-        self.assertIs(self.data.content_class, DummyContent)
+        self.assertIs(self.data.content_class, DataContentBase)
 
     def test_cache_not_setable(self):
         self.assertEqual(self.data.cache, {})
@@ -103,6 +95,7 @@ class TestDataCache(TestCase):
 
     def test_add_file(self):
         self.assertEqual(self.data.cache, {})
+
         for fn in get_inheritance_data_files():
             self.data.add_file(fn)
             self.assertIn(fn, self.data.cache)
@@ -137,20 +130,22 @@ class TestDataContentBase(TestCase):
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
-        self.c.paths = { 'includes':
-                         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data-inheritance')}
+        self.c.paths = { 'includes': 'data-inheritance',
+                         'projectroot': os.path.abspath(os.path.dirname(__file__))}
 
         self.content_fn = get_inheritance_data_files()[0]
+        print self.content_fn
 
-        self.data = DummyCache([], self.c)
-        self.data.ingest([self.content_fn])
-
+        self.data = DataCache([self.content_fn], self.c)
         self.content = self.data.cache[self.content_fn]
 
     def test_content_created(self):
-        for fn, example in self.data.cache.items():
-            for v in example.content.values():
-                self.assertIsInstance(v, RecursiveConfigurationBase)
+        for fn, example in self.data.file_iter():
+            self.assertIsInstance(example, DataContentBase)
+
+    def test_content_item_created(self):
+        for fn, block in self.data.content_iter():
+            self.assertIsInstance(block, InheritableContentBase)
 
     def test_content_is_correct_type(self):
         self.assertIsInstance(self.content, DataContentBase)
@@ -183,7 +178,7 @@ class TestInheritedContentResolution(TestCase):
         self.c.paths = { 'includes':
                          os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data-inheritance')}
 
-        self.data = DummyCache(get_inheritance_data_files(), self.c)
+        self.data = DataCache(get_inheritance_data_files(), self.c)
 
     def test_gross_correctness_of_ingestion(self):
         self.assertEqual(len(self.data.cache), 3)
@@ -196,7 +191,7 @@ class TestInheritedContentResolution(TestCase):
 
             for doc in data.content.values():
                 if 'source' in doc:
-                    self.assertEqual(len(doc.state.keys()), 7)
+                    self.assertEqual(len(doc.state.keys()), 5)
 
             data.resolve()
 
@@ -210,7 +205,7 @@ class TestBaseTemplateRendering(TestCase):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
 
-        self.data = DummyRecord({}, self.c)
+        self.data = InheritableContentBase({}, self.c)
         self.data.replacement = { 'state': 'foo' }
 
     def test_replacement(self):
