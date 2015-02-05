@@ -2,6 +2,9 @@
 ``libgiza`` -- Build Automation Toolkit
 =======================================
 
+.. image:: https://travis-ci.org/tychoish/libgiza.svg?branch=master
+    :target: https://travis-ci.org/tychoish/libgiza
+
 ``libgiza` is a Python package that provides a collection of base
 classes used in the construction of `giza
 <https://pypi.python.org/pypi/giza>`_, which is a documentation build
