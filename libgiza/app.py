@@ -17,6 +17,7 @@
 organizing framework for running larger sequences of operations.
 """
 
+import collections
 import contextlib
 import logging
 import random
@@ -262,10 +263,13 @@ class BuildApp(object):
 
     def extend_queue(self, tasks):
         for task in tasks:
-            if isinstance(task, list):
-                app = self.sub_app()
-                app.extend_queue(task)
-                self.add(app)
+            if isinstance(task, collections.Iterable):
+                if len(task) == 0:
+                    continue
+                else:
+                    app = self.sub_app()
+                    app.extend_queue(task)
+                    self.add(app)
             else:
                 self.add(task)
 
