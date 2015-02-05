@@ -239,7 +239,7 @@ class BuildApp(object):
     def queue_has_apps(self):
         for task in self.queue:
             if isinstance(task, BuildApp):
-                    return True
+                return True
 
         return False
 
@@ -262,7 +262,12 @@ class BuildApp(object):
 
     def extend_queue(self, tasks):
         for task in tasks:
-            self.add(task)
+            if isinstance(task, list):
+                app = self.sub_app()
+                app.extend_queue(task)
+                self.add(app)
+            else:
+                self.add(task)
 
     def sub_app(self):
         app = BuildApp()
@@ -396,7 +401,6 @@ class BuildApp(object):
 
         if isinstance(randomize, bool):
             self.randomize = True
-
         # remove empty apps from queue
         self.clean_queue()
 
