@@ -7,8 +7,8 @@ python:
   - 'pypy3'
 install:
   - pip install .
-  - pip install giza
-script: nosetests
+  - pip install giza pyflakes pep8
+script: make test
 notifications:
   flowdock:
     secure: "LbWkeeOXc8HkNe11/aGOgbwokxjk8c35FmjUZHU8YkETmlbiHup22fXgIXslhPhaN41xXhuiPnslVI7ZoBzyc17llHwIHCRQyqKFRg2Gb/nIcJ3QW7T+IsT98xhnoIUTFNnam4yNTd3HrpZD9dtr2EHsToAXZo5mayOCEU8UJig="
