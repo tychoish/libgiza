@@ -244,15 +244,14 @@ class BuildApp(object):
         return False
 
     def clean_queue(self):
-        if self.queue_has_apps:
-            old_queue_len = len(self.queue)
+        old_queue_len = len(self.queue)
 
-            self.queue = [task for task in self.queue
-                          if isinstance(task, Task) or (isinstance(task, BuildApp) and
-                                                        len(task.queue) >= 1)]
+        self.queue = [task for task in self.queue
+                      if isinstance(task, Task) or (isinstance(task, BuildApp) and
+                                                    len(task.queue) >= 1)]
 
-            if len(self.queue) < old_queue_len:
-                logger.warning('cleansed queue of empty apps')
+        if len(self.queue) < old_queue_len:
+            logger.warning('cleansed queue of empty apps')
 
     def close_pool(self):
         if (self.is_pool(self.worker_pool) and
