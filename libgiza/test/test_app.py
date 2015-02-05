@@ -130,11 +130,6 @@ class CommonAppSuite(object):
         with self.assertRaises(TypeError):
             self.app.add(1)
 
-    def test_run_invalid_task(self):
-        self.app.queue.append(1)
-        with self.assertRaises(TypeError):
-            self.app.run()
-
     def test_single_runner_task(self):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
