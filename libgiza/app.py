@@ -391,8 +391,11 @@ class BuildApp(object):
         if len(group) != 0:
             self.results.extend(self.pool.runner(group))
 
-    def run(self):
+    def run(self, randomize=None):
         "Executes all tasks in the :attr:`~giza.app.BuildApp.queue`."
+
+        if isinstance(randomize, bool):
+            self.randomize = True
 
         # remove empty apps from queue
         self.clean_queue()
