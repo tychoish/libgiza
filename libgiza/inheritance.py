@@ -394,7 +394,11 @@ class DataContentBase(RecursiveConfigurationBase):
         were specified in the file.
         """
         def sorter(ref_a, ref_b):
-            return cmp(self.fetch(ref_a).number, self.fetch(ref_b).number)
+            # would be cmp() in python 2, but this is py3 compatible
+            a_num = self.fetch(ref_a).number
+            b_num = self.fetch(ref_b).number
+
+            return (a_num > b_num) - (a_num < b_num)
 
         if self._reordered is False:
             for content in self.content.values():

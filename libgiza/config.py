@@ -16,10 +16,15 @@ import logging
 import os.path
 import json
 import contextlib
+import sys
+import numbers
 
 import yaml
 
 logger = logging.getLogger('libgiza.config')
+
+if sys.version_info >= (3, 0):
+    basestring = str
 
 
 class ConfigurationBase(object):
@@ -95,8 +100,7 @@ class ConfigurationBase(object):
 
     @staticmethod
     def _is_value_type(value):
-        acceptable_types = (ConfigurationBase, basestring, list, int, long,
-                            float, complex)
+        acceptable_types = (ConfigurationBase, basestring, list, numbers.Number)
 
         if isinstance(value, acceptable_types):
             return True
