@@ -230,7 +230,20 @@ class CommonAppSuite(object):
         self.assertEqual(len(self.app.queue), 10)
         self.assertFalse(self.app.queue_has_apps)
 
-    def test_has_apps_predicate_all_apps(self):
+    def test_has_apps_with_member_tasks_predicate_all_apps(self):
+        self.assertEqual(self.app.queue, [])
+
+        for _ in range(10):
+            a = self.app.add('app')
+            self.assertIsInstance(a, BuildApp)
+            t = a.add('task')
+            t.job = sum
+            t.args = (1, 2)
+
+        self.assertEqual(len(self.app.queue), 10)
+        self.assertTrue(self.app.queue_has_apps)
+
+    def test_has_apps_without_member_tasks_predicate_all_apps(self):
         self.assertEqual(self.app.queue, [])
 
         for _ in range(10):
@@ -246,9 +259,12 @@ class CommonAppSuite(object):
             self.app.add('task')
 
         for _ in range(10):
-            self.app.add('app')
+            a = self.app.add('app')
+            self.assertIsInstance(a, BuildApp)
+            t = a.add('task')
+            t.job = sum
+            t.args = (1, 2)
 
-        self.assertEqual(len(self.app.queue), 20)
         self.assertTrue(self.app.queue_has_apps)
 
     def test_running_mixed_queue_all_apps_integrated(self):
@@ -494,7 +510,6 @@ class CommonAppSuite(object):
 
         self.app.run()
 
-        print(self.app.results)
         self.assertEqual(self.app.results,
                          [2, 2, 2, 2, 2, 2,
                           3, 3, 3, 3, 3, 2, 4, 4, 4, 4, 4,
@@ -539,7 +554,6 @@ class CommonAppSuite(object):
 
         self.app.run()
 
-        print(self.app.results)
         self.assertEqual(self.app.results,
                          [2, 2, 2, 2, 2, 2,
                           3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 2,
@@ -618,6 +632,16 @@ class CommonAppSuite(object):
     def test_is_pool_predicate_invalid(self):
         self.assertFalse(self.app.is_pool(self.c))
         self.assertFalse(self.app.is_pool(self.app))
+
+    def test_pool_clenser_removes_empty_apps(self):
+        self.assertEqual(len(self.app.queue), 0)
+
+        a = self.app.add('app')
+        self.assertIsInstance(a, BuildApp)
+
+        self.assertEqual(len(self.app.queue), 1)
+        self.app.clean_queue()
+        self.assertEqual(len(self.app.queue), 0)
 
 
 class TestBuildAppStandardConfig(CommonAppSuite, TestCase):

@@ -237,12 +237,24 @@ class BuildApp(object):
 
     @property
     def queue_has_apps(self):
-        num_apps = len([True for t in self.queue if isinstance(t, BuildApp)])
+        num_apps = len([True for t in self.queue
+                        if isinstance(t, BuildApp)])
 
         if num_apps >= 1:
             return True
         else:
             return False
+
+    def clean_queue(self):
+        if self.queue_has_apps:
+            old_queue_len = len(self.queue)
+
+            self.queue = [task for task in self.queue
+                          if isinstance(task, Task) or (isinstance(task, BuildApp) and
+                                                        len(task.queue) >= 1)]
+
+            if len(self.queue) < old_queue_len:
+                logger.warning('cleansed queue of empty apps')
 
     def close_pool(self):
         if (self.is_pool(self.worker_pool) and
@@ -381,6 +393,9 @@ class BuildApp(object):
     def run(self):
         "Executes all tasks in the :attr:`~giza.app.BuildApp.queue`."
 
+        # remove empty apps from queue
+        self.clean_queue()
+
         if len(self.queue) == 1:
             self._run_single(self.queue[0])
         elif self.queue_has_apps is True:
@@ -388,6 +403,7 @@ class BuildApp(object):
         else:
             if self.randomize is True:
                 random.shuffle(self.queue)
+
             self.results.extend(self.pool.runner(self.queue))
 
         self.queue = []
