@@ -553,6 +553,7 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.results, [])
 
         app = BuildApp()
+        app.pool_size = 2
         t = app.add('task')
         t.job = sum
         t.args = [[1, 2], 0]
@@ -566,6 +567,7 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.results, [])
 
         app = BuildApp()
+        app.pool_size = 2
 
         for _ in range(10):
             t = app.add('task')
@@ -581,6 +583,7 @@ class CommonAppSuite(object):
     def test_add_existing_app_object(self):
         self.assertEqual(self.app.queue, [])
         app = BuildApp()
+        app.pool_size = 2
         self.app.add(app)
         self.assertIs(app, self.app.queue[0])
         self.assertIsNot(app, BuildApp())
@@ -589,12 +592,14 @@ class CommonAppSuite(object):
     def test_pool_setter_existing_pool_thread(self):
         self.assertIsNone(self.app.worker_pool)
         p = ThreadPool(self.c)
+        p.pool_size = 2
         self.app.pool = p
         self.assertIs(self.app.pool, p)
 
     def test_pool_setter_existing_pool_process(self):
         self.assertIsNone(self.app.worker_pool)
         p = ProcessPool(self.c)
+        p.pool_size = 2
         self.app.pool = p
         self.assertIs(self.app.pool, p)
 
@@ -621,6 +626,7 @@ class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
         self.app = BuildApp(self.c)
+        self.app.pool_size = 2
 
     def test_conf_object_consistent_in_task(self):
         self.assertEqual(self.app.queue, [])
@@ -649,4 +655,5 @@ class TestBuildAppMinimalConfig(CommonAppSuite, TestCase):
     @classmethod
     def setUp(self):
         self.app = BuildApp()
+        self.app.pool_size = 2
         self.c = None
