@@ -237,13 +237,11 @@ class BuildApp(object):
 
     @property
     def queue_has_apps(self):
-        num_apps = len([True for t in self.queue
-                        if isinstance(t, BuildApp)])
+        for task in self.queue:
+            if isinstance(task, BuildApp):
+                    return True
 
-        if num_apps >= 1:
-            return True
-        else:
-            return False
+        return False
 
     def clean_queue(self):
         if self.queue_has_apps:
@@ -343,6 +341,10 @@ class BuildApp(object):
 
     def _run_single(self, j):
         if isinstance(j, BuildApp):
+            if len(j.queue) == 0:
+                logger.warning('app does not have tasks, skipping.')
+                return False
+
             if j.pool is None:
                 j.pool = self.pool
 
@@ -360,9 +362,9 @@ class BuildApp(object):
         group = []
 
         for task in self.queue:
-            if not isinstance(task, BuildApp):
+            if isinstance(task, Task):
                 group.append(task)
-            else:
+            elif isinstance(task, BuildApp):
                 if len(group) == 1:
                     j = group[0]
                     if isinstance(j, MapTask):
@@ -396,7 +398,10 @@ class BuildApp(object):
         # remove empty apps from queue
         self.clean_queue()
 
-        if len(self.queue) == 1:
+        if len(self.queue) == 0:
+            logger.error('cannot run app without tasks')
+            return self.results
+        elif len(self.queue) == 1:
             self._run_single(self.queue[0])
         elif self.queue_has_apps is True:
             self._run_mixed_queue()
