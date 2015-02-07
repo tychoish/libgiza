@@ -26,12 +26,12 @@ import logging
 import os.path
 import sys
 
-logger = logging.getLogger('libgiza.inheritance')
-
 import jinja2
 import yaml
 
 from libgiza.config import RecursiveConfigurationBase, ConfigurationBase
+
+logger = logging.getLogger('libgiza.inheritance')
 
 if sys.version_info >= (3, 0):
     basestring = str

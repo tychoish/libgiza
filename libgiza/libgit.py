@@ -16,9 +16,9 @@ import os
 import logging
 import contextlib
 
-logger = logging.getLogger('giza.libgit')
-
 import pygit2
+
+logger = logging.getLogger('giza.libgit')
 
 
 class GitError(Exception):
