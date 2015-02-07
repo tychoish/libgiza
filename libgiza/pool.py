@@ -25,9 +25,9 @@ import multiprocessing.dummy
 import numbers
 import sys
 
-logger = logging.getLogger('giza.pool')
+from libgiza.task import MapTask, Task
 
-from libgiza.task import MapTask
+logger = logging.getLogger('giza.pool')
 
 
 class PoolConfigurationError(Exception):
@@ -81,26 +81,49 @@ class WorkerPool(object):
     def async_runner(self, jobs):
         results = []
 
-        if len(jobs) == 1 and not isinstance(jobs[0], MapTask):
-            j = jobs[0]
-            if j.needs_rebuild is True:
-                results.append((j, j.run()))
-            else:
-                logger.debug("{0} does not need a rebuild".format(j.target))
-        else:
-            for job in jobs:
-                if not hasattr(job, 'run'):
-                    raise TypeError('task "{0}" is not a valid Task'.format(job))
+        for idx, job in enumerate(jobs):
+            if not hasattr(job, 'run'):
+                raise TypeError('task "{0}" is not a valid Task'.format(job))
 
-                if job.needs_rebuild is True:
-                    if isinstance(job, MapTask):
-                        results.append((job, self.p.map_async(job.job, job.iter)))
-                    else:
-                        results.append((job, self.p.apply_async(run_task, args=[job])))
-                else:
-                    logger.debug("{0} does not need a rebuild".format(job.target))
+            if job.needs_rebuild is True:
+                self.add_task(job, idx, results)
+            else:
+                logger.debug("{0} does not need a rebuild".format(job.target))
 
         return results
+
+    def do_finalizers(self, job, results):
+        final = None
+
+        if len(job.finalizers) == 0:
+            pass
+        elif len(job.finalizers) == 1:
+            self.add_task(job.finalizers[0], len(results) + 1, results)
+        elif len(job.finalizers) > 1:
+            counter = len(results)
+            for task in job.finalizers:
+                if isinstance(task, tuple) and task[0] in ('final', 'last'):
+                    if final is not None:
+                        logger.error('can only define one final finalizer task')
+                    else:
+                        final = task[1]
+                else:
+                    counter += 1
+                    self.add_task(task, counter, results)
+
+        self.add_task(final, len(results) + 1, results)
+
+    def add_task(self, job, idx, results):
+        if job is None:
+            return
+        elif hasattr(job, 'queue'):
+            m = 'cannot use finalizers that have queues. skipping tasks ({0})'
+            logger.warning(m.format(len(job.queue)))
+
+        if isinstance(job, MapTask):
+            results.append((job, idx, self.p.map_async(job.job, job.iter)))
+        else:
+            results.append((job, idx, self.p.apply_async(run_task, args=[job])))
 
     def get_results(self, results):
         has_errors = False
@@ -108,32 +131,53 @@ class WorkerPool(object):
         retval = []
         errors = []
 
-        for job, ret in results:
-            try:
-                if ret is None:
-                    retval.append(ret)
-                else:
-                    try:
-                        retval.append(ret.get())
-                    except KeyboardInterrupt:
-                        logger.critical("received keyboard interrupt. exiting")
-                        return
-            except Exception as e:
-                has_errors = True
-                errors.append((job, e))
+        has_finalizers = False
+        for job, _, __ in results:
+            if len(job.finalizers) >= 1:
+                has_finalizers = True
+                break
+
+        if has_finalizers is True:
+            while True:
+                for job, idx, ret in results:
+                    if ret.ready():
+                        try:
+                            retval.append((idx, ret.get()))
+                            self.do_finalizers(job, results)
+                        except Exception as e:
+                            m = 'caught error "{0}", waiting for other tasks to finish'
+                            logger.error(m.format(e))
+                            has_errors = True
+                            errors.append((job, e))
+
+                        results.remove((job, idx, ret))
+
+                if len(results) == 0:
+                    break
+        else:
+            for job, idx, ret in results:
+                try:
+                    retval.append((idx, ret.get()))
+                except Exception as e:
+                    m = 'caught error "{0}", waiting for other tasks to finish'
+                    logger.error(m.format(e))
+                    has_errors = True
+                    errors.append((job, e))
 
         if has_errors is True:
             error_list = []
             for job, err in errors:
-                error_list.append(e)
+                error_list.append(err)
                 if job.description is None:
-                    logger.error("encountered error '{0}' in {1}".format(e, job.job))
+                    logger.error("encountered error '{0}' in {1}".format(err, job.job))
                 else:
-                    logger.error("'{0}' encountered error: {1}, exiting".format(job.description, e))
+                    logger.error("'{0}' caught error: {1}, exiting".format(job.description, err))
 
             raise PoolResultsError(error_list)
 
-        return retval
+        retval.sort(key=lambda x: x[0])
+
+        return [r[1] for r in retval]
 
 
 class SerialPool(object):
@@ -141,6 +185,9 @@ class SerialPool(object):
         self.p = None
         self.pool_size = pool_size
         logger.debug('new phony "serial" pool object')
+
+    def close(self):
+        pass
 
     def get_results(self, results):
         return results
@@ -158,6 +205,10 @@ class SerialPool(object):
 
             logger.debug('running: ' + msg)
             results.append(job.run())
+
+            if isinstance(job, Task) and len(job.finalizers) > 1:
+                logger.debug('finalizing: ' + msg)
+                results.append(job.finalize())
 
         return results
 

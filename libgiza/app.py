@@ -23,11 +23,12 @@ import logging
 import random
 import numbers
 
-logger = logging.getLogger('libgiza.app')
-
 import libgiza.pool
+
 from libgiza.task import Task, MapTask
 from libgiza.config import ConfigurationBase
+
+logger = logging.getLogger('libgiza.app')
 
 
 class BuildApp(object):
@@ -60,7 +61,7 @@ class BuildApp(object):
 
         self._conf = conf
         self._force = force
-        self._default_pool = None
+        self._default_pool = 'lazy'
         self._pool_size = None
 
         self.queue = []
@@ -75,10 +76,12 @@ class BuildApp(object):
             'serial': libgiza.pool.SerialPool
         }
 
-        self.pool_types = tuple([self.pool_mapping[p]
-                                 for p in self.pool_mapping])
+        self.pool_types = tuple(self.pool_mapping.values())
 
+        # so that apps are compatible with tasks in pools
         self.needs_rebuild = True
+        self.finalizers = []
+
         self.root_app = True
 
         self.target = None
@@ -110,10 +113,19 @@ class BuildApp(object):
         self._target = value
 
     @property
+    def description(self):
+        jobs = str([j.job if isinstance(j, Task) else type(j)
+                    for j in self.queue if isinstance(j, Task)])
+
+        if self.root_app is True:
+            return "a root level BuildApp object: " + jobs
+        else:
+            return "a sublevel BuildApp object: " + jobs
+
+    @property
     def force(self):
         if self._force is None:
             if self.conf is None:
-                logger.warning('force flag for app is not set, setting to "false"')
                 self._force = False
             else:
                 logger.warning('deprecated use of conf object in app setup for force value')
@@ -159,17 +171,20 @@ class BuildApp(object):
         if self._default_pool is None:
             if self.conf is None:
                 logger.warning('pool type not specified, choosing at random')
-                return random.choice(list(self.pool_mapping.keys()))
+                self._default_pool = 'random'
             else:
                 logger.warning('deprecated use of conf object in app setup for pool type')
                 self._default_pool = self.conf.runstate.runner
-                return self._default_pool
-        else:
-            return self._default_pool
+
+        return self._default_pool
 
     @default_pool.setter
     def default_pool(self, value):
-        if value in self.pool_mapping:
+        if value == 'lazy':
+            pass
+        elif value == 'random':
+            self._default_pool = random.choice(['process', 'thread', 'serial'])
+        elif value in self.pool_mapping:
             self._default_pool = value
         else:
             logger.error('{0} is not a valid pool type'.format(value))
@@ -185,53 +200,44 @@ class BuildApp(object):
 
     @property
     def pool(self):
-        if self.worker_pool is None:
-            self.create_pool()
-
         return self.worker_pool
 
     @pool.setter
     def pool(self, value=None):
-        self.create_pool(value)
+        if value == self.worker_pool:
+            pass
+        elif isinstance(value, self.pool_types):
+            self.worker_pool = value
+        elif value in self.pool_mapping:
+            self.default_pool = value
+        elif value in self.pool_types:
+            self.worker_pool = value(self.pool_size)
 
     def create_pool(self, pool=None):
-        if pool is None:
-            if self.worker_pool is None:
-                pool = self.default_pool
-            else:
-                pool = self.worker_pool
-
-        if self.worker_pool is not None:
-            logger.debug('pool "{0}" exists, not creating new "{1}"'.format(pool, type(pool)))
-            return
-
-        if self.worker_pool is None:
-            if self.is_pool(pool) and self.worker_pool is None:
-                self.worker_pool = pool
-            elif pool in self.pool_types:
-                self.worker_pool = pool(self.pool_size)
-            elif self.is_pool_type(pool) and self.worker_pool is None:
-                self.worker_pool = self.pool_mapping[pool](self.pool_size)
-            elif self.default_pool in self.pool_types:
-                self.worker_pool = self.pool_mapping[self.default_pool](self.pool_size)
-        elif self.is_pool(self.worker_pool):
-            return
-        elif (self.conf is not None and
-              pool in self.pool_types and
-              isinstance(self.worker_pool, self.pool_mapping[pool])):
-            self.close_pool()
-            self.worker_pool = self.pool_mapping[pool](self.pool_size)
-        else:
-            raise TypeError("pool {0} of type {1} is invalid".format(pool, type(pool)))
-
-    def is_pool(self, pool):
         if isinstance(pool, self.pool_types):
-            return True
-        else:
-            return False
+            self.pool = pool
+            return
+        elif self.has_active_pool():
+            logger.debug('pool exists, not creating a new pool')
+            return
+        elif pool in self.pool_mapping:
+            self.default_pool = pool
+        elif self.default_pool == 'lazy' or pool == 'lazy':
+            logger.debug('avoiding creating a lazy pool')
+            return
+        elif self.root_app is False:
+            logger.warning('creating a worker pool on a sub_app is probably an error.')
 
-    def is_pool_type(self, value):
-        if value in self.pool_mapping:
+        if pool is None:
+            pool = self.default_pool
+        elif pool not in self.pool_mapping:
+            logger.error('{0} is not a valid pool type')
+            pool = self.default_pool
+
+        self.pool = self.pool_mapping[pool](self.pool_size)
+
+    def has_active_pool(self):
+        if isinstance(self.worker_pool, self.pool_types):
             return True
         else:
             return False
@@ -247,31 +253,35 @@ class BuildApp(object):
     def clean_queue(self):
         old_queue_len = len(self.queue)
 
-        self.queue = [task for task in self.queue
-                      if isinstance(task, Task) or (isinstance(task, BuildApp) and
-                                                    len(task.queue) >= 1)]
+        new_queue = []
+        for task in self.queue:
+            if isinstance(task, BuildApp):
+                if len(task.queue) == 0:
+                    logger.warning('dropping an empty app from task queue')
+                    continue
+                else:
+                    if task.pool is None:
+                        task.pool = self.pool
+                    new_queue.append(task)
+            elif isinstance(task, Task):
+                if len(task.finalizers) > 0:
+                    for finalizer in task.finalizers:
+                        if isinstance(finalizer, BuildApp):
+                            m = 'do not use apps in finalizers. skipping some tasks ({0}).'
+                            logger.critical(m.format(len(finalizer.queue)))
+                            continue
+
+                new_queue.append(task)
+
+        self.queue = new_queue
 
         if len(self.queue) < old_queue_len:
             logger.warning('cleansed queue of empty apps')
 
     def close_pool(self):
-        if (self.is_pool(self.worker_pool) and
-           not isinstance(self.worker_pool, libgiza.pool.SerialPool)):
-
+        if self.has_active_pool():
             self.worker_pool.close()
             self.worker_pool = None
-
-    def extend_queue(self, tasks):
-        for task in tasks:
-            if isinstance(task, collections.Iterable):
-                if len(task) == 0:
-                    continue
-                else:
-                    app = self.sub_app()
-                    app.extend_queue(task)
-                    self.add(app)
-            else:
-                self.add(task)
 
     def sub_app(self):
         app = BuildApp()
@@ -284,6 +294,25 @@ class BuildApp(object):
             app.conf = self.conf
 
         return app
+
+    def extend_queue(self, tasks):
+        if isinstance(tasks, Task):
+            self.add(tasks)
+        elif isinstance(tasks, BuildApp):
+            self.add(tasks)
+        elif tasks is None or len(tasks) == 0:
+            return
+        else:
+            for task in tasks:
+                if isinstance(task, collections.Iterable):
+                    if len(task) == 0:
+                        continue
+                    else:
+                        app = self.sub_app()
+                        app.extend_queue(task)
+                        self.add(app)
+                else:
+                    self.add(task)
 
     def add(self, task=None, conf=None):
         """
@@ -323,9 +352,7 @@ class BuildApp(object):
             self.queue.append(t)
             return t
         elif task in (BuildApp, 'app'):
-            self.create_pool()
             t = self.sub_app()
-
             self.queue.append(t)
             return t
         else:
@@ -337,7 +364,6 @@ class BuildApp(object):
                 self.queue.append(task)
                 return task
             elif isinstance(task, BuildApp):
-                self.create_pool()
                 task.root_app = False
                 task.defualt_pool = self.default_pool
                 task.force = self.force
@@ -347,25 +373,6 @@ class BuildApp(object):
             else:
                 raise TypeError('invalid task type')
 
-    def _run_single(self, j):
-        if isinstance(j, BuildApp):
-            if len(j.queue) == 0:
-                logger.warning('app does not have tasks, skipping.')
-                return False
-
-            if j.pool is None:
-                j.pool = self.pool
-
-            self.results.extend(j.run())
-        elif isinstance(j, Task):
-            if j.needs_rebuild is True:
-                if isinstance(j, MapTask):
-                    self.results.extend(self.pool.runner([j]))
-                else:
-                    self.results.append(j.run())
-        else:
-            raise TypeError
-
     def _run_mixed_queue(self):
         group = []
 
@@ -373,14 +380,7 @@ class BuildApp(object):
             if isinstance(task, Task):
                 group.append(task)
             elif isinstance(task, BuildApp):
-                if len(group) == 1:
-                    j = group[0]
-                    if isinstance(j, MapTask):
-                        self.results.extend(self.pool.runner([j]))
-                    else:
-                        self.results.append(j.run())
-                        group = []
-                elif len(group) > 1:
+                if len(group) >= 1:
                     if self.randomize is True:
                         random.shuffle(group)
 
@@ -390,12 +390,7 @@ class BuildApp(object):
                 if task.pool is None:
                     task.pool = self.pool
 
-                if isinstance(task, MapTask):
-                    self.results.extend(self.pool.runner([task]))
-                elif isinstance(task, Task):
-                    self.results.append(task.run())
-                else:
-                    self.results.extend(task.run())
+                self.results.extend(task.run())
 
         if len(group) != 0:
             self.results.extend(self.pool.runner(group))
@@ -405,14 +400,17 @@ class BuildApp(object):
 
         if isinstance(randomize, bool):
             self.randomize = True
+
+        if self.root_app is True and self.default_pool in (None, 'lazy'):
+            self.default_pool = 'random'
+
+        self.create_pool()
+
         # remove empty apps from queue
         self.clean_queue()
 
         if len(self.queue) == 0:
             logger.error('cannot run app without tasks')
-            return self.results
-        elif len(self.queue) == 1:
-            self._run_single(self.queue[0])
         elif self.queue_has_apps is True:
             self._run_mixed_queue()
         else:
@@ -425,11 +423,11 @@ class BuildApp(object):
         return self.results
 
     @contextlib.contextmanager
-    def context(self, conf=None):
+    def context(self, conf=None, randomize=None):
         if len(self.queue) == 0:
             yield self
-            self.run()
+            self.run(randomize)
         else:
             app = self.add('app')
             yield app
-            app.run()
+            app.run(randomize)

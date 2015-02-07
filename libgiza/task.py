@@ -25,9 +25,9 @@ import sys
 import os.path
 import collections
 
-logger = logging.getLogger('giza.task')
-
 from libgiza.config import ConfigurationBase
+
+logger = logging.getLogger('libgiza.task')
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -68,6 +68,7 @@ class Task(object):
         self._force = None
         if job is not None:
             self.job = job
+        self._finalizers = []
         self.args_type = None
         self.description = description
 
@@ -166,6 +167,30 @@ class Task(object):
             logger.critical(type(value))
 
     @property
+    def finalizers(self):
+        return self._finalizers
+
+    @finalizers.setter
+    def finalizers(self, value):
+        if isinstance(value, collections.Iterable):
+            for task in value:
+                if hasattr(task, 'queue'):
+                    raise TypeError(type(task), len(task.queue))
+                elif hasattr(task, 'run'):
+                    self._finalizers.append(task)
+                elif isinstance(task, tuple) and isinstance(task[1], Task):
+                    self._finalizers.append(task)
+                elif isinstance(task, collections.Iterable):
+                    raise TypeError(type(task), task)
+        else:
+            if hasattr(task, 'queue'):
+                raise TypeError(type(task), len(task.queue))
+            elif hasattr(task, 'run'):
+                self._finalizers.append(value)
+            else:
+                raise TypeError(type(task))
+
+    @property
     def needs_rebuild(self):
         """
         Used by the execution application to see if a rebuild is needed. Always
@@ -193,7 +218,18 @@ class Task(object):
             r = self.job()
 
         logger.debug('completed running task {0}, {1}'.format(self.task_id, self.description))
+
         return r
+
+    def finalize(self):
+        logger.debug('running {0} finalizers (serially)'.format(len(self.finalizers)))
+        results = []
+
+        for task in self.finalizers:
+            results.append(task.run())
+
+        logger.debug('completed {0} finalizers'.format(len(results)))
+        return results
 
 
 class MapTask(Task):
@@ -221,7 +257,6 @@ class MapTask(Task):
 
     def run(self):
         return map(self.job, self.iter)
-
 
 # Dependency Checking
 
