@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import random
 from unittest import TestCase
 
 from libgiza.app import BuildApp
@@ -51,80 +52,84 @@ class CommonAppSuite(object):
     def test_pool_setter_default(self):
         self.assertIsNone(self.app.worker_pool)
         pool_type = self.app.default_pool
+
+        if pool_type == 'lazy':
+            pool_type = random.choice(['thread', 'serial'])
+
         self.app.pool = pool_type
 
+        self.assertIsNone(self.app.worker_pool)
+        self.app.create_pool()
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, self.app.pool_mapping[pool_type])
 
     def test_pool_setter_process(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = 'process'
+        self.assertIsNone(self.app.worker_pool)
+        self.app.create_pool()
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ProcessPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_thread(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = 'thread'
+        self.assertIsNone(self.app.worker_pool)
+        self.app.create_pool()
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ThreadPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_serial(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = 'serial'
+        self.assertIsNone(self.app.worker_pool)
+        self.app.create_pool()
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, SerialPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_process_by_ref(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = ProcessPool
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ProcessPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_thread_by_ref(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = ThreadPool
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, ThreadPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_serial_by_ref(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = SerialPool
         self.assertIsNotNone(self.app.worker_pool)
         self.assertIsInstance(self.app.pool, SerialPool)
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_setter_invalid_input(self):
         self.assertIsNone(self.app.worker_pool)
-        self.app.pool = 1
+        self.app.default_pool = 'serial'
 
+        self.app.pool = 1
+        self.app.create_pool()
         self.assertIn(type(self.app.pool), self.app.pool_mapping.values())
+        self.assertTrue(self.app.has_active_pool())
 
     def test_pool_closer(self):
         self.assertIsNone(self.app.worker_pool)
         self.app.pool = 'thread'
+        self.assertIsNone(self.app.worker_pool)
+        self.app.create_pool()
         self.assertIsInstance(self.app.pool, ThreadPool)
+        self.assertTrue(self.app.has_active_pool())
         self.app.close_pool()
         self.assertIsNone(self.app.worker_pool)
-
-    def test_pool_type_checker_thread(self):
-        self.assertTrue(self.app.is_pool_type('thread'))
-
-    def test_pool_type_checker_process(self):
-        self.assertTrue(self.app.is_pool_type('process'))
-
-    def test_pool_type_checker_serial(self):
-        self.assertTrue(self.app.is_pool_type('serial'))
-
-    def test_pool_type_checker_serial_invalid(self):
-        self.assertFalse(self.app.is_pool_type('serialized'))
-
-    def test_pool_type_checker_process_invalid(self):
-        self.assertFalse(self.app.is_pool_type('proc'))
-
-    def test_pool_type_checker_thread_invalid(self):
-        self.assertFalse(self.app.is_pool_type('threaded'))
-
-    def test_is_pool_predicate_serial(self):
-        self.assertTrue(self.app.is_pool(SerialPool()))
+        self.assertFalse(self.app.has_active_pool())
 
     def test_add_invalid_object(self):
         with self.assertRaises(TypeError):
@@ -173,6 +178,7 @@ class CommonAppSuite(object):
     def test_results_ordering(self):
         expected_results = [12, 13, 14, 15, 7, 17, 18, 10, 20, 12]
 
+        self.assertIsNone(self.app.pool)
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
 
@@ -186,7 +192,6 @@ class CommonAppSuite(object):
             t.description = 'test task'
 
         self.app.run()
-
         self.assertEqual(self.app.results,  expected_results)
 
     def test_single_runner_app_integrated_with_many_subtasks(self):
@@ -266,8 +271,6 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
 
-        self.app.pool = 'serial'
-
         for _ in range(10):
             app = self.app.add('app')
             for _ in range(10):
@@ -284,8 +287,6 @@ class CommonAppSuite(object):
     def test_running_mixed_queue_mixed_queue_integrated(self):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
-
-        self.app.pool = 'serial'
 
         for _ in range(10):
             t = self.app.add('task')
@@ -310,8 +311,6 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
 
-        self.app.pool = 'serial'
-
         for _ in range(10):
             app = self.app.add('app')
             for _ in range(10):
@@ -320,6 +319,7 @@ class CommonAppSuite(object):
                 t.args = [[1, 2], 0]
                 t.description = 'test task'
 
+        self.app.create_pool('thread')
         self.app._run_mixed_queue()
 
         self.assertEqual(sum(self.app.results), 300)
@@ -329,7 +329,8 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
 
-        self.app.pool = 'serial'
+        self.app.default_pool = 'thread'
+        self.app.create_pool()
 
         for _ in range(10):
             t = self.app.add('task')
@@ -339,6 +340,7 @@ class CommonAppSuite(object):
 
         for _ in range(10):
             app = self.app.add('app')
+            app.pool = self.app.pool
             for _ in range(10):
                 t = app.add('task')
                 t.job = sum
@@ -354,8 +356,6 @@ class CommonAppSuite(object):
         self.assertEqual(self.app.queue, [])
         self.assertEqual(self.app.results, [])
 
-        self.app.pool = 'serial'
-
         for _ in range(5):
             t = self.app.add('task')
             t.job = sum
@@ -368,6 +368,7 @@ class CommonAppSuite(object):
             t.args = [[2, 2], 0]
             t.description = 'test task'
 
+        self.app.create_pool()
         self.app.run()
 
         self.assertEqual(len(self.app.queue), 0)
@@ -435,12 +436,14 @@ class CommonAppSuite(object):
 
         self.app.run()
 
-        self.assertEqual(self.app.results,
-                         [9,
-                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                          3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                          10, 4, 4, 4, 4, 4])
+        expected_results = [9,
+                            3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                            3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                            3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+                            10, 4, 4, 4, 4, 4]
+
+        self.assertEqual(sorted(self.app.results), sorted(expected_results))
+        self.assertEqual(self.app.results, expected_results)
 
     def test_task_results_lack_of_order(self):
         self.assertEqual(self.app.queue, [])
@@ -618,16 +621,6 @@ class CommonAppSuite(object):
         self.app.pool = p
         self.assertIs(self.app.pool, p)
 
-    def test_is_pool_predicate_thead(self):
-        self.assertTrue(self.app.is_pool(ThreadPool(self.c)))
-
-    def test_is_pool_predicate_process(self):
-        self.assertTrue(self.app.is_pool(ProcessPool(self.c)))
-
-    def test_is_pool_predicate_invalid(self):
-        self.assertFalse(self.app.is_pool(self.c))
-        self.assertFalse(self.app.is_pool(self.app))
-
     def test_pool_clenser_removes_empty_apps(self):
         self.assertEqual(len(self.app.queue), 0)
 
@@ -645,6 +638,7 @@ class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
         self.app = BuildApp(self.c)
+        self.app.default_pool = random.choice(['serial', 'thread'])
         self.app.pool_size = 2
 
     def test_conf_object_consistent_in_task(self):
@@ -669,10 +663,17 @@ class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
         self.assertIs(self.c, self.app.queue[0].conf)
         self.assertIs(self.c, t.conf)
 
+    def tearDown(self):
+        self.app.close_pool()
+
 
 class TestBuildAppMinimalConfig(CommonAppSuite, TestCase):
     @classmethod
     def setUp(self):
         self.app = BuildApp()
+        self.app.default_pool = random.choice(['serial', 'thread'])
         self.app.pool_size = 2
         self.c = None
+
+    def tearDown(self):
+        self.app.close_pool()

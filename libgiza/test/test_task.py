@@ -117,7 +117,6 @@ class TestTask(BaseTaskSuite, TestCase):
 
     def test_running_tasks(self):
         def sum_func(iterable, start):
-            print(iterable, start)
             return sum(iterable, start)
 
         for i in (((1, 2, 3), 0), ([1, 2, 3], 0), {'iterable': [1, 2, 3], 'start': 0}):
