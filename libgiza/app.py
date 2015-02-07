@@ -296,9 +296,7 @@ class BuildApp(object):
         return app
 
     def extend_queue(self, tasks):
-        if isinstance(tasks, Task):
-            self.add(tasks)
-        elif isinstance(tasks, BuildApp):
+        if isinstance(tasks, (Task, BuildApp)):
             self.add(tasks)
         elif tasks is None or len(tasks) == 0:
             return

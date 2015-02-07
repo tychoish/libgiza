@@ -97,10 +97,9 @@ class WorkerPool(object):
 
         if len(job.finalizers) == 0:
             pass
-        elif len(job.finalizers) == 1:
-            self.add_task(job.finalizers[0], len(results) + 1, results)
-        elif len(job.finalizers) > 1:
+        else:
             counter = len(results)
+
             for task in job.finalizers:
                 if isinstance(task, tuple) and task[0] in ('final', 'last'):
                     if final is not None:
@@ -137,6 +136,10 @@ class WorkerPool(object):
                 has_finalizers = True
                 break
 
+        # the while loop is required so that finalizer tasks begin running as
+        # soon as their parent completes, but is otherwise functionally
+        # equivalent . However, the while loop spins the main thread, which is
+        # *much* slower with thread/gevent pools
         if has_finalizers is True:
             while True:
                 for job, idx, ret in results:
@@ -154,6 +157,8 @@ class WorkerPool(object):
 
                 if len(results) == 0:
                     break
+
+            retval.sort(key=lambda x: x[0])
         else:
             for job, idx, ret in results:
                 try:
@@ -164,6 +169,7 @@ class WorkerPool(object):
                     has_errors = True
                     errors.append((job, e))
 
+        # after all tasks complete, process and raise an error if needed
         if has_errors is True:
             error_list = []
             for job, err in errors:
@@ -174,10 +180,8 @@ class WorkerPool(object):
                     logger.error("'{0}' caught error: {1}, exiting".format(job.description, err))
 
             raise PoolResultsError(error_list)
-
-        retval.sort(key=lambda x: x[0])
-
-        return [r[1] for r in retval]
+        else:
+            return [r[1] for r in retval]
 
 
 class SerialPool(object):
