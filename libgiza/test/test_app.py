@@ -144,7 +144,8 @@ class CommonAppSuite(object):
         t.description = 'test task'
         t.args = [[1, 2], 0]
 
-        self.app._run_single(t)
+        self.app.add(t)
+        self.app.run(t)
         self.assertEqual(self.app.results[0], 3)
 
     def test_single_runner_task_integrated(self):
@@ -157,8 +158,8 @@ class CommonAppSuite(object):
         t.args = [[1, 2], 0]
         t.description = 'test task'
 
+        self.app.add(t)
         self.app.run()
-
         self.assertEqual(self.app.results[0], 3)
 
     def test_single_runner_app_integrated(self):
@@ -571,7 +572,8 @@ class CommonAppSuite(object):
         t.args = [[1, 2], 0]
         t.description = 'test task'
 
-        self.app._run_single(app)
+        self.app.add(app)
+        self.app.run()
         self.assertEqual(self.app.results[0], 3)
 
     def test_single_runner_app_with_many_subtasks(self):
@@ -587,7 +589,8 @@ class CommonAppSuite(object):
             t.description = 'test task'
             t.args = [[1, 2], 0]
 
-        self.app._run_single(app)
+        self.app.add(app)
+        self.app.run()
         self.assertEqual(len(self.app.results), 10)
         self.assertEqual(self.app.results[0], 3)
         self.assertEqual(sum(self.app.results), 30)
