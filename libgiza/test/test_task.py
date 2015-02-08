@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from unittest import TestCase
 
 from libgiza.task import MapTask, Task
+from libgiza.app import BuildApp
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 
@@ -104,6 +107,51 @@ class BaseTaskSuite(object):
 
         self.assertTrue(self.task.needs_rebuild)
 
+    def test_finalizer_setter_error_app(self):
+        with self.assertRaises(TypeError):
+            self.task.finalizers = BuildApp()
+
+    def test_finalizer_setter_error_app_in_list(self):
+        with self.assertRaises(TypeError):
+            self.task.finalizers = [self.Task(), BuildApp()]
+
+    def test_finalizer_setter_error_fallthrough(self):
+        with self.assertRaises(TypeError):
+            self.task.finalizers = 1
+
+    def test_finalizer_setter_error_nested_list(self):
+        with self.assertRaises(TypeError):
+            self.task.finalizers = [self.Task(), [self.Task(), self.Task()]]
+
+    def test_finalizer_setter_non_distructive_assignment(self):
+        self.assertEqual(len(self.task.finalizers), 0)
+        self.task.finalizers = self.Task()
+        self.assertEqual(len(self.task.finalizers), 1)
+        self.task.finalizers = self.Task()
+        self.assertEqual(len(self.task.finalizers), 2)
+        self.task.finalizers = [self.Task(), self.Task(), self.Task(), self.Task()]
+        self.assertEqual(len(self.task.finalizers), 6)
+
+    def test_finalizer_setter_special_case_for_tuples_error(self):
+        self.assertEqual(len(self.task.finalizers), 0)
+        with self.assertRaises(TypeError):
+            self.task.finalizers = (self.Task(), 'keyword')
+
+    def test_finalizer_setter_special_case_for_tuples_list_error(self):
+        self.assertEqual(len(self.task.finalizers), 0)
+        with self.assertRaises(TypeError):
+            self.task.finalizers = [(self.Task(), 'keyword'), self.Task()]
+
+    def test_finalizer_setter_special_case_for_tuples(self):
+        self.assertEqual(len(self.task.finalizers), 0)
+        self.task.finalizers = ('keyword', self.Task())
+        self.assertEqual(len(self.task.finalizers), 1)
+
+    def test_finalizer_setter_special_case_for_tuples_list(self):
+        self.assertEqual(len(self.task.finalizers), 0)
+        self.task.finalizers = [('keyword', self.Task()), self.Task()]
+        self.assertEqual(len(self.task.finalizers), 2)
+
 
 class TestTask(BaseTaskSuite, TestCase):
     @classmethod
@@ -127,6 +175,62 @@ class TestTask(BaseTaskSuite, TestCase):
             t.description = "test task: " + str(i)
 
             self.assertEqual(t.run(), 6)
+
+    def test_finalizers_simple(self):
+        t = self.Task(job=sum,
+                      args=((1, 2, 3), 0))
+
+        self.assertEqual(t.finalizers, [])
+
+        t.finalizers = [
+            Task(job=sum,
+                 args=((4, 5, 6, i), 0))
+            for i in range(10)
+        ]
+
+        self.assertEqual(len(t.finalizers), 10)
+        self.assertEqual(t.run(), 6)
+        self.assertEqual(len(t.finalizers), 10)
+        finals = t.finalize()
+        self.assertEqual(len(finals), 10)
+        self.assertEqual(len(t.finalizers), 10)
+        self.assertEqual(finals,
+                         [15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
+
+    def test_finalizers_nested(self):
+        t = self.Task(job=sum,
+                      args=((1, 2, 3), 0))
+
+        self.assertEqual(t.finalizers, [])
+
+        t.finalizers = [
+            Task(job=sum,
+                 args=((4, 5, 6, i), 0))
+            for i in range(10)
+        ]
+        self.assertEqual(len(t.finalizers), 10)
+
+        for task in t.finalizers:
+            task.finalizers.extend([
+                Task(job=sum,
+                     args=((4, 5, 6, i), 0))
+                for i in range(10)
+            ])
+            self.assertEqual(len(task.finalizers), 10)
+
+        task_result = t.run()
+        self.assertEqual(task_result, 6)
+        results = [task_result]
+        results.extend(t.finalize())
+
+        self.assertEqual(len(results), 111)
+        self.assertEqual(results[0], 6)
+        self.assertEqual(results[1], 15)
+
+        for result in results:
+            self.assertIsInstance(result, numbers.Number)
+            self.assertTrue(result >= 6)
+            self.assertTrue(result <= 24)
 
 
 class TestMapTask(BaseTaskSuite, TestCase):

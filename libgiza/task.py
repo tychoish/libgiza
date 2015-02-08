@@ -172,7 +172,15 @@ class Task(object):
 
     @finalizers.setter
     def finalizers(self, value):
-        if isinstance(value, collections.Iterable):
+        if (isinstance(value, tuple) and
+                len(value) == 2 and
+                isinstance(value[1], Task)):
+            self._finalizers.append(value)
+        elif hasattr(value, 'queue'):
+            raise TypeError(type(value), len(value.queue))
+        elif hasattr(value, 'run'):
+            self._finalizers.append(value)
+        elif isinstance(value, collections.Iterable):
             for task in value:
                 if hasattr(task, 'queue'):
                     raise TypeError(type(task), len(task.queue))
@@ -183,12 +191,7 @@ class Task(object):
                 elif isinstance(task, collections.Iterable):
                     raise TypeError(type(task), task)
         else:
-            if hasattr(task, 'queue'):
-                raise TypeError(type(task), len(task.queue))
-            elif hasattr(task, 'run'):
-                self._finalizers.append(value)
-            else:
-                raise TypeError(type(task))
+            raise TypeError(type(value))
 
     @property
     def needs_rebuild(self):
@@ -227,6 +230,9 @@ class Task(object):
 
         for task in self.finalizers:
             results.append(task.run())
+
+            if len(task.finalizers) > 0:
+                results.extend(task.finalize())
 
         logger.debug('completed {0} finalizers'.format(len(results)))
         return results

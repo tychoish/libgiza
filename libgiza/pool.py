@@ -212,7 +212,7 @@ class SerialPool(object):
 
             if isinstance(job, Task) and len(job.finalizers) > 1:
                 logger.debug('finalizing: ' + msg)
-                results.append(job.finalize())
+                results.extend(job.finalize())
 
         return results
 

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
 import random
 from unittest import TestCase
 
@@ -633,6 +634,56 @@ class CommonAppSuite(object):
         self.assertEqual(len(self.app.queue), 1)
         self.app.clean_queue()
         self.assertEqual(len(self.app.queue), 0)
+
+    def test_finalizers_simple(self):
+        t = Task(job=sum,
+                 args=((1, 2, 3), 0))
+
+        self.assertEqual(t.finalizers, [])
+
+        t.finalizers = [
+            Task(job=sum,
+                 args=((4, 5, 6, i), 0))
+            for i in range(10)
+        ]
+
+        self.app.add(t)
+        results = self.app.run()
+        self.assertEqual(len(results), 11)
+        self.assertEqual(results,
+                         [6, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
+
+    def test_finalizers_nested(self):
+        t = Task(job=sum,
+                 args=((1, 2, 3), 0))
+
+        self.assertEqual(t.finalizers, [])
+
+        t.finalizers = [
+            Task(job=sum,
+                 args=((4, 5, 6, i), 0))
+            for i in range(10)
+        ]
+        self.assertEqual(len(t.finalizers), 10)
+
+        for task in t.finalizers:
+            task.finalizers.extend([
+                Task(job=sum,
+                     args=((4, 5, 6, i), 0))
+                for i in range(10)
+            ])
+            self.assertEqual(len(task.finalizers), 10)
+
+        self.app.add(t)
+        results = self.app.run()
+        self.assertEqual(len(results), 111)
+        self.assertEqual(results[0], 6)
+        self.assertEqual(results[1], 15)
+
+        for result in results:
+            self.assertIsInstance(result, numbers.Number)
+            self.assertTrue(result >= 6)
+            self.assertTrue(result <= 24)
 
 
 class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
