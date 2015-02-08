@@ -57,8 +57,7 @@ class GitRepo(object):
     def cmd(self, *args):
         cmd_parts = ['git']
 
-        for arg in args:
-            cmd_parts.extend(arg.split())
+        cmd_parts.extend(args)
 
         try:
             return subprocess.check_output(args=cmd_parts,
@@ -68,6 +67,14 @@ class GitRepo(object):
             logger.error('encountered error with {0} in repository {1}'.format(' '.join(cmd_parts),
                                                                                self.path))
             raise GitError(e)
+
+    def create_repo(self, bare=False):
+        args = ['init']
+
+        if bare is True:
+            args.append('--bare')
+
+        return self.cmd(*args)
 
     def top_level(self):
         return self.path
