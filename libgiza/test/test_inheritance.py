@@ -30,18 +30,23 @@ def get_inheritance_data_files():
 
 
 class TestDataCache(TestCase):
-    @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
         self.c.paths = {'includes': os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                                  'data-inheritance')}
 
-        self.data = DataCache([], self.c)
+        self.DataContentBase = DataContentBase
+        self.DataCache = DataCache
+
+        self.create_data()
+
+    def create_data(self):
+        self.data = self.DataCache([], self.c)
 
     def test_content_class_default(self):
         self.assertEqual(self.data.cache, {})
-        self.assertIs(self.data.content_class, DataContentBase)
+        self.assertIs(self.data.content_class, self.DataContentBase)
 
     def test_cache_not_setable(self):
         self.assertEqual(self.data.cache, {})
@@ -127,7 +132,6 @@ class TestDataCache(TestCase):
 
 
 class TestDataContentBase(TestCase):
-    @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
@@ -136,19 +140,26 @@ class TestDataContentBase(TestCase):
 
         self.content_fn = get_inheritance_data_files()[0]
 
-        self.data = DataCache([self.content_fn], self.c)
+        self.DataContentBase = DataContentBase
+        self.DataCache = DataCache
+        self.InheritableContentBase = InheritableContentBase
+
+        self.create_data()
+
+    def create_data(self):
+        self.data = self.DataCache([self.content_fn], self.c)
         self.content = self.data.cache[self.content_fn]
 
     def test_content_created(self):
         for fn, example in self.data.file_iter():
-            self.assertIsInstance(example, DataContentBase)
+            self.assertIsInstance(example, self.DataContentBase)
 
     def test_content_item_created(self):
         for fn, block in self.data.content_iter():
-            self.assertIsInstance(block, InheritableContentBase)
+            self.assertIsInstance(block, self.InheritableContentBase)
 
     def test_content_is_correct_type(self):
-        self.assertIsInstance(self.content, DataContentBase)
+        self.assertIsInstance(self.content, self.DataContentBase)
 
     def test_content_state_reference(self):
         self.assertIs(self.content.content, self.content.state['content'])
@@ -171,14 +182,17 @@ class TestDataContentBase(TestCase):
 
 
 class TestInheritedContentResolution(TestCase):
-    @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
         self.c.paths = {'includes': os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                                  'data-inheritance')}
+        self.DataCache = DataCache
 
-        self.data = DataCache(get_inheritance_data_files(), self.c)
+        self.create_data()
+
+    def create_data(self):
+        self.data = self.DataCache(get_inheritance_data_files(), self.c)
 
     def test_gross_correctness_of_ingestion(self):
         self.assertEqual(len(self.data.cache), 3)
@@ -201,12 +215,15 @@ class TestInheritedContentResolution(TestCase):
 
 
 class TestBaseTemplateRendering(TestCase):
-    @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
+        self.InheritableContentBase = InheritableContentBase
 
-        self.data = InheritableContentBase({}, self.c)
+        self.create_data()
+
+    def create_data(self):
+        self.data = self.InheritableContentBase({}, self.c)
         self.data.replacement = {'state': 'foo'}
 
     def test_replacement(self):
