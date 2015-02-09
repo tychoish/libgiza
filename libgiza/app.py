@@ -115,7 +115,7 @@ class BuildApp(object):
     @property
     def description(self):
         jobs = str([j.job if isinstance(j, Task) else type(j)
-                    for j in self.queue if isinstance(j, Task)])
+                    for j in self.queue])
 
         if self.root_app is True:
             return "a root level BuildApp object: " + jobs
@@ -225,14 +225,15 @@ class BuildApp(object):
         elif self.default_pool == 'lazy' or pool == 'lazy':
             logger.debug('avoiding creating a lazy pool')
             return
-        elif self.root_app is False:
-            logger.warning('creating a worker pool on a sub_app is probably an error.')
-
-        if pool is None:
+        elif pool is None:
             pool = self.default_pool
         elif pool not in self.pool_mapping:
-            logger.error('{0} is not a valid pool type')
+            m = '{0} is not a valid pool type, using the default: {1}'
+            logger.error(m.format(pool, self.default_pool))
             pool = self.default_pool
+
+        if self.root_app is False:
+            logger.warning('creating a worker pool on a sub_app is probably an error.')
 
         self.pool = self.pool_mapping[pool](self.pool_size)
 
@@ -264,13 +265,6 @@ class BuildApp(object):
                         task.pool = self.pool
                     new_queue.append(task)
             elif isinstance(task, Task):
-                if len(task.finalizers) > 0:
-                    for finalizer in task.finalizers:
-                        if isinstance(finalizer, BuildApp):
-                            m = 'do not use apps in finalizers. skipping some tasks ({0}).'
-                            logger.critical(m.format(len(finalizer.queue)))
-                            continue
-
                 new_queue.append(task)
 
         self.queue = new_queue
@@ -397,7 +391,7 @@ class BuildApp(object):
         "Executes all tasks in the :attr:`~giza.app.BuildApp.queue`."
 
         if isinstance(randomize, bool):
-            self.randomize = True
+            self.randomize = randomize
 
         if self.root_app is True and self.default_pool in (None, 'lazy'):
             self.default_pool = 'random'

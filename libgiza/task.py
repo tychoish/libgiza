@@ -214,15 +214,15 @@ class Task(object):
     def run(self):
         logger.debug('({0}) calling {1}'.format(self.task_id, self.job))
         if self.args_type == 'kwargs':
-            r = self.job(**self.args)
+            result = self.job(**self.args)
         elif self.args_type == 'args':
-            r = self.job(*self.args)
+            result = self.job(*self.args)
         else:
-            r = self.job()
+            result = self.job()
 
         logger.debug('completed running task {0}, {1}'.format(self.task_id, self.description))
 
-        return r
+        return result
 
     def finalize(self):
         logger.debug('running {0} finalizers (serially)'.format(len(self.finalizers)))

@@ -81,12 +81,12 @@ class WorkerPool(object):
     def async_runner(self, jobs):
         results = []
 
-        for idx, job in enumerate(jobs):
+        for job in jobs:
             if not hasattr(job, 'run'):
                 raise TypeError('task "{0}" is not a valid Task'.format(job))
 
             if job.needs_rebuild is True:
-                self.add_task(job, idx, results)
+                self.add_task(job, results)
             else:
                 logger.debug("{0} does not need a rebuild".format(job.target))
 
@@ -98,8 +98,6 @@ class WorkerPool(object):
         if len(job.finalizers) == 0:
             pass
         else:
-            counter = len(results)
-
             for task in job.finalizers:
                 if isinstance(task, tuple) and task[0] in ('final', 'last'):
                     if final is not None:
@@ -107,12 +105,13 @@ class WorkerPool(object):
                     else:
                         final = task[1]
                 else:
-                    counter += 1
-                    self.add_task(task, counter, results)
+                    self.add_task(task, results)
 
-        self.add_task(final, len(results) + 1, results)
+        self.add_task(final, results)
 
-    def add_task(self, job, idx, results):
+    def add_task(self, job, results):
+        idx = len(results) + 1
+
         if job is None:
             return
         elif hasattr(job, 'queue'):
@@ -210,7 +209,7 @@ class SerialPool(object):
             logger.debug('running: ' + msg)
             results.append(job.run())
 
-            if isinstance(job, Task) and len(job.finalizers) > 1:
+            if isinstance(job, Task) and len(job.finalizers) >= 1:
                 logger.debug('finalizing: ' + msg)
                 results.extend(job.finalize())
 

@@ -16,21 +16,21 @@ import copy
 
 
 def get_dependency_graph(app):
-    g = {}
+    graph = {}
 
     tasks = copy.copy(app.queue)
     for task in tasks:
         if isinstance(task.target, list):
             for target in task.target:
-                if target not in g:
-                    g[target] = []
+                if target not in graph:
+                    graph[target] = []
                 if isinstance(task.dependency, list):
-                    g[target].extend(task.dependency)
+                    graph[target].extend(task.dependency)
                 else:
-                    g[target].append(task.dependency)
+                    graph[target].append(task.dependency)
             continue
-        elif task.target not in g:
-            g[task.target] = []
+        elif task.target not in graph:
+            graph[task.target] = []
 
         if task.target is None:
             print(type(task),
@@ -39,8 +39,8 @@ def get_dependency_graph(app):
                   task.description if hasattr(task, 'description') else "no text")
 
         if isinstance(task.dependency, list):
-            g[task.target].extend(task.dependency)
+            graph[task.target].extend(task.dependency)
         else:
-            g[task.target].append(task.dependency)
+            graph[task.target].append(task.dependency)
 
-    return g
+    return graph
