@@ -22,6 +22,8 @@ from libgiza.inheritance import (DataContentBase, DataCache,
 from giza.config.main import Configuration
 from giza.config.runtime import RuntimeStateConfig
 
+# these helper functions are useful in reusing these tests for the giza
+# application tests.
 
 def get_inheritance_data_files():
     return [os.path.join(get_test_file_path(), fn)
@@ -41,6 +43,7 @@ class TestDataCache(TestCase):
 
         self.DataContentBase = DataContentBase
         self.DataCache = DataCache
+        self.files = get_inheritance_data_files()
 
         self.create_data()
 
@@ -84,50 +87,46 @@ class TestDataCache(TestCase):
         self.assertIn('bar', self.data)
 
     def test_ingest(self):
-        files = get_inheritance_data_files()
         self.assertEqual(self.data.cache, {})
-        self.data.ingest(files)
+        self.data.ingest(self.files)
         self.assertNotEqual(self.data.cache, {})
 
-        for fn in files:
+        for fn in self.files:
             self.assertIn(fn, self.data)
 
     def test_ingest_ignore_duplicates(self):
-        files = get_inheritance_data_files()
         self.assertEqual(self.data.cache, {})
-        self.data.ingest(files)
-        self.data.ingest(files)
+        self.data.ingest(self.files)
+        self.data.ingest(self.files)
         self.assertNotEqual(self.data.cache, {})
 
-        self.assertEqual(len(self.data.cache), len(files))
+        self.assertEqual(len(self.data.cache), len(self.files))
 
     def test_add_file(self):
         self.assertEqual(self.data.cache, {})
 
-        for fn in get_inheritance_data_files():
+        for fn in self.files:
             self.data.add_file(fn)
             self.assertIn(fn, self.data.cache)
             self.assertIn(fn, self.data)
             self.assertIsInstance(self.data.cache[fn], self.data.content_class)
 
     def test_fetch(self):
-        files = get_inheritance_data_files()
         self.assertEqual(self.data.cache, {})
-        self.data.ingest(files)
+        self.data.ingest(self.files)
 
-        for fn in files:
+        for fn in self.files:
             self.assertIn(fn, self.data)
             for idx in range(len(self.data.cache), 1):
                 content = self.data.fetch(fn, idx)
                 self.assertIsInstance(content, dict)
 
-        self.assertEqual(len(self.data.cache), len(files))
+        self.assertEqual(len(self.data.cache), len(self.files))
 
     def test_fetch_without_adding_file(self):
-        files = get_inheritance_data_files()
         self.assertEqual(self.data.cache, {})
 
-        for fn in files:
+        for fn in self.files:
             if not os.path.isfile(fn):
                 with self.assertRaises(InheritableContentError):
                     self.data.fetch(fn, 1)
