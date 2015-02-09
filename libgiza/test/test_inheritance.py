@@ -24,17 +24,20 @@ from giza.config.runtime import RuntimeStateConfig
 
 
 def get_inheritance_data_files():
-    return [os.path.abspath(os.path.join(os.path.dirname(__file__), 'data-inheritance', fn))
+    return [os.path.join(get_test_file_path(), fn)
             for fn in ('example-add-one.yaml', 'example-add-two.yaml',
                        'example-add-three.yaml')]
+
+
+def get_test_file_path():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), 'data-inheritance'))
 
 
 class TestDataCache(TestCase):
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
-        self.c.paths = {'includes': os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                                 'data-inheritance')}
+        self.c.paths = {'includes': get_test_file_path()}
 
         self.DataContentBase = DataContentBase
         self.DataCache = DataCache

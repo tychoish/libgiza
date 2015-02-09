@@ -72,14 +72,24 @@ class InheritanceReference(RecursiveConfigurationBase):
     def is_resolved(self):
         return self.resolved
 
+    def set_up_search_path(self, name):
+        fns = [os.path.join(os.getcwd(), name)]
+        try:
+            fns.append(os.path.join(self.conf.paths.includes, name))
+        except:
+            pass
+
+        fns.extend([os.path.join(d[0], name) for d in os.walk(os.getcwd())])
+
+        return fns
+
     @property
     def file(self):
         return self.state['file']
 
     @file.setter
     def file(self, value):
-        fns = [os.path.join(os.getcwd(), value)]
-        fns.extend([os.path.join(d[0], value) for d in os.walk(os.getcwd())])
+        fns = self.set_up_search_path(value)
 
         for fn in fns:
             if os.path.isfile(fn):
@@ -434,6 +444,17 @@ class DataCache(RecursiveConfigurationBase):
     def __contains__(self, key):
         return key in self.cache
 
+    def set_up_search_path(self, name):
+        fns = [os.path.join(os.getcwd(), name)]
+        try:
+            fns.append(os.path.join(self.conf.paths.includes, name))
+        except:
+            pass
+
+        fns.extend([os.path.join(d[0], name) for d in os.walk(os.getcwd())])
+
+        return fns
+
     @property
     def cache(self):
         return self._cache
@@ -476,8 +497,7 @@ class DataCache(RecursiveConfigurationBase):
                 return self.cache[fn].fetch(ref)
             else:
                 logger.warning("file ({0}) doesn't exist, crawling directory".format(fn))
-                fns = [os.path.join(os.getcwd(), fn)]
-                fns.extend([os.path.join(d[0], fn) for d in os.walk(os.getcwd())])
+                fns = self.set_up_search_path(fn)
 
                 for filen in fns:
                     if os.path.isfile(filen):
