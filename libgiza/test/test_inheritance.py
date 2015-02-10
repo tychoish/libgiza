@@ -43,11 +43,11 @@ class TestDataCache(TestCase):
 
         self.DataContentBase = DataContentBase
         self.DataCache = DataCache
-        self.files = get_inheritance_data_files()
 
         self.create_data()
 
     def create_data(self):
+        self.files = get_inheritance_data_files()
         self.data = self.DataCache([], self.c)
 
     def test_content_class_default(self):
@@ -140,8 +140,6 @@ class TestDataContentBase(TestCase):
         self.c.paths = {'includes': 'data-inheritance',
                         'projectroot': os.path.abspath(os.path.dirname(__file__))}
 
-        self.content_fn = get_inheritance_data_files()[0]
-
         self.DataContentBase = DataContentBase
         self.DataCache = DataCache
         self.InheritableContentBase = InheritableContentBase
@@ -149,6 +147,8 @@ class TestDataContentBase(TestCase):
         self.create_data()
 
     def create_data(self):
+        self.content_fn = get_inheritance_data_files()[0]
+
         self.data = self.DataCache([self.content_fn], self.c)
         self.content = self.data.cache[self.content_fn]
 
@@ -195,9 +195,11 @@ class TestInheritedContentResolution(TestCase):
 
     def create_data(self):
         self.data = self.DataCache(get_inheritance_data_files(), self.c)
+        self.len_source_docs = 5
+        self.num_docs = 3
 
     def test_gross_correctness_of_ingestion(self):
-        self.assertEqual(len(self.data.cache), 3)
+        self.assertEqual(len(self.data.cache), self.num_docs)
 
     def test_everything_resolved(self):
         for fn, data in self.data.cache.items():
@@ -207,7 +209,7 @@ class TestInheritedContentResolution(TestCase):
 
             for doc in data.content.values():
                 if 'source' in doc:
-                    self.assertEqual(len(doc.state.keys()), 5)
+                    self.assertEqual(len(doc.state.keys()), self.len_source_docs)
 
             data.resolve()
 
