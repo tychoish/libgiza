@@ -61,8 +61,8 @@ class GitRepo(object):
 
         try:
             return str(subprocess.check_output(args=cmd_parts,
-                                           cwd=self.path,
-                                           stderr=subprocess.STDOUT).strip())
+                                               cwd=self.path,
+                                               stderr=subprocess.STDOUT).strip())
         except Exception as e:
             logger.error('encountered error with {0} in repository {1}'.format(' '.join(cmd_parts),
                                                                                self.path))

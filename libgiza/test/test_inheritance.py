@@ -25,6 +25,7 @@ from giza.config.runtime import RuntimeStateConfig
 # these helper functions are useful in reusing these tests for the giza
 # application tests.
 
+
 def get_inheritance_data_files():
     return [os.path.join(get_test_file_path(), fn)
             for fn in ('example-add-one.yaml', 'example-add-two.yaml',
