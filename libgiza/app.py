@@ -402,7 +402,7 @@ class BuildApp(object):
         self.clean_queue()
 
         if len(self.queue) == 0:
-            logger.error('cannot run app without tasks')
+            pass  # we could warn here, and while it's not ideal, its mostly harmless.
         elif self.queue_has_apps is True:
             self._run_mixed_queue()
         else:
