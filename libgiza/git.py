@@ -89,7 +89,7 @@ class GitRepo(object):
         return self.cmd('log', sha + '~..' + sha, "--pretty='format:%ae'")
 
     def branch_exists(self, name):
-        r = self.cmd('branch --list ' + name).split('\n')
+        r = self.cmd('branch', '--list', name).split('\n')
         if '' in r:
             r.remove('')
 
@@ -99,7 +99,7 @@ class GitRepo(object):
             return False
 
     def branch_file(self, path, branch='master'):
-        return self.cmd('show {branch}:{path}'.format(branch=branch, path=path))
+        return self.cmd('show', ':'.join((branch, path)))
 
     def checkout(self, ref):
         self.cmd('checkout', ref)
