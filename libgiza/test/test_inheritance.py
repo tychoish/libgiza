@@ -145,6 +145,9 @@ class TestDataContentBase(TestCase):
         self.DataCache = DataCache
         self.InheritableContentBase = InheritableContentBase
 
+        self.dummy_doc = {'ref': 'dummy-doc',
+                          'pre': 'pre text'}
+
         self.create_data()
 
     def create_data(self):
@@ -183,6 +186,15 @@ class TestDataContentBase(TestCase):
         else:
             self.assertIsInstance(self.content.is_resolved(), bool)
 
+    def test_add_always_returns_value(self):
+        cache = self.DataCache([], self.c)
+        collection = cache.content_class('', cache, self.c)
+        self.assertIsInstance(collection, DataContentBase)
+
+        content = collection.add(self.dummy_doc)
+
+        self.assertIsInstance(content, InheritableContentBase)
+        print(collection.content)
 
 class TestInheritedContentResolution(TestCase):
     def setUp(self):
