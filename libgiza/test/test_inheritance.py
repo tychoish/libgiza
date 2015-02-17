@@ -196,6 +196,7 @@ class TestDataContentBase(TestCase):
         self.assertIsInstance(content, InheritableContentBase)
         print(collection.content)
 
+
 class TestInheritedContentResolution(TestCase):
     def setUp(self):
         self.c = Configuration()
