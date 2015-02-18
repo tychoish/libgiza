@@ -115,6 +115,12 @@ class BaseTaskSuite(object):
         with self.assertRaises(TypeError):
             self.task.finalizers = [self.Task(), BuildApp()]
 
+    def test_add_finalizer_returns_task(self):
+        self.assertTrue(len(self.task.finalizers) == 0)
+        t = self.Task()
+        check = self.task.add_finalizer(t)
+        self.assertIs(t, check)
+
     def test_finalizer_setter_error_fallthrough(self):
         with self.assertRaises(TypeError):
             self.task.finalizers = 1

@@ -108,7 +108,6 @@ class Task(object):
     def force(self):
         if self._force is None:
             if self.conf is None:
-                logger.warning('force flag for app is not set, setting to "false"')
                 self._force = False
             else:
                 logger.warning('deprecated use of conf object in app setup for force value')
@@ -192,6 +191,11 @@ class Task(object):
                     raise TypeError(type(task), task)
         else:
             raise TypeError(type(value))
+
+    def add_finalizer(self, task):
+        self.finalizers = task
+
+        return task
 
     @property
     def needs_rebuild(self):
@@ -309,10 +313,12 @@ def check_dependency(target, dependency):
             if dep is None:
                 return True
             elif target_time < os.path.getmtime(dep):
+                logger.debug("rebuild of {0} triggered by: {1}".format(target, dep))
                 return True
         return False
     elif os.path.exists(dependency):
         if os.path.getmtime(target) < os.path.getmtime(dependency):
+            logger.debug("rebuild of {0} triggered by: {1}".format(target, dependency))
             return True
         else:
             return False

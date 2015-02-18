@@ -105,7 +105,8 @@ class WorkerPool(object):
                     else:
                         final = task[1]
                 else:
-                    self.add_task(task, results)
+                    if task.needs_rebuild is True:
+                        self.add_task(task, results)
 
         self.add_task(final, results)
 
