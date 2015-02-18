@@ -50,10 +50,10 @@ class ConfigurationBase(object):
             try:
                 setattr(self, key, value)
             except AttributeError as e:
-                m = '{0} ingestion error with {1} key and {2} value, for {3} obj'
-                m = m.format(key, value, type(self))
+                m = '{0}({1}) ingestion error with {2} key and {3} value, for {4} obj'
+                m = m.format(e, type(e), key, value, type(self))
                 logger.error(m)
-                raise ConigurationError(m)
+                raise ConfigurationError(m)
 
     def _prep_load_data(self, input_obj):
         if isinstance(input_obj, dict):
