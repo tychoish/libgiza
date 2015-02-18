@@ -22,6 +22,7 @@ import os
 import re
 import contextlib
 import subprocess
+import shlex
 
 logger = logging.getLogger('libgiza.git')
 
@@ -68,6 +69,20 @@ class GitRepo(object):
                                                                                self.path))
             raise GitError(e)
 
+    def clone(self, remote, repo_path=None, branch=None):
+        args = ['clone', remote]
+
+        if branch is not None:
+            args.extend(['--branch', branch])
+
+        if repo_path is not None:
+            args.append(repo_path)
+
+        ret = self.cmd(*args)
+        self.path = repo_path
+
+        return ret
+
     def create_repo(self, bare=False):
         args = ['init']
 
@@ -86,7 +101,7 @@ class GitRepo(object):
         if sha is None:
             sha = self.sha()
 
-        return self.cmd('log', sha + '~..' + sha, "--pretty='format:%ae'")
+        return self.cmd('log', shlex.split(sha + '~..' + sha + " --pretty='format:%ae'"))
 
     def branch_exists(self, name):
         r = self.cmd('branch', '--list', name).split('\n')
@@ -156,6 +171,9 @@ class GitRepo(object):
     def fetch(self, remote='origin'):
         return self.cmd('fetch', remote)
 
+    def fetch_all(self):
+        return self.cmd('fetch', '--all')
+
     def update(self):
         return self.cmd('pull', '--rebase')
 
@@ -167,17 +185,6 @@ class GitRepo(object):
 
     def sha(self, ref='HEAD'):
         return self.cmd('rev-parse', '--verify', ref)
-
-    def clone(self, remote, repo_path=None, branch=None):
-        args = ['clone', remote]
-
-        if branch is not None:
-            args.extend(['--branch', branch])
-
-        if repo_path is not None:
-            args.append(repo_path)
-
-        return self.cmd(*args)
 
     def commit_messages(self, num=1):
         args = ['log', '--oneline', '--max-count=' + str(num)]
