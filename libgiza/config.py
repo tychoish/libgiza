@@ -27,6 +27,10 @@ if sys.version_info >= (3, 0):
     basestring = str
 
 
+class ConfigurationError(Exception):
+    pass
+
+
 class ConfigurationBase(object):
     _option_registry = []
     _version = 0
@@ -43,7 +47,13 @@ class ConfigurationBase(object):
         input_obj = self._prep_load_data(input_obj)
 
         for key, value in input_obj.items():
-            setattr(self, key, value)
+            try:
+                setattr(self, key, value)
+            except AttributeError as e:
+                m = '{0} ingestion error with {1} key and {2} value, for {3} obj'
+                m = m.format(key, value, type(self))
+                logger.error(m)
+                raise ConigurationError(m)
 
     def _prep_load_data(self, input_obj):
         if isinstance(input_obj, dict):
