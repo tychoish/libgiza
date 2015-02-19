@@ -67,7 +67,7 @@ class BuildApp(object):
         self.queue = []
         self.results = []
         self.worker_pool = None
-        self.randomize = False
+        self._randomize = False
 
         self.pool_mapping = {
             'thread': libgiza.pool.ThreadPool,
@@ -167,14 +167,29 @@ class BuildApp(object):
             self._conf = value
 
     @property
+    def randomize(self):
+        if hasattr(self, '_randomize'):
+            return self._randomize
+        else:
+            return False
+
+    @randomize.setter
+    def randomize(self, value):
+        if isinstance(value, bool):
+            self._randomize = value
+
+    @property
     def default_pool(self):
         if self._default_pool is None:
             if self.conf is None:
                 logger.warning('pool type not specified, choosing at random')
-                self._default_pool = 'random'
+                self.default_pool = 'random'
             else:
                 logger.warning('deprecated use of conf object in app setup for pool type')
                 self._default_pool = self.conf.runstate.runner
+
+        if self.root_app is True and self._default_pool in (None, 'lazy'):
+            self.default_pool = 'random'
 
         return self._default_pool
 
@@ -390,12 +405,7 @@ class BuildApp(object):
     def run(self, randomize=None):
         "Executes all tasks in the :attr:`~giza.app.BuildApp.queue`."
 
-        if isinstance(randomize, bool):
-            self.randomize = randomize
-
-        if self.root_app is True and self.default_pool in (None, 'lazy'):
-            self.default_pool = 'random'
-
+        self.randomize = randomize
         self.create_pool()
 
         # remove empty apps from queue
