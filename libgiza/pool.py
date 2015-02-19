@@ -145,14 +145,20 @@ class WorkerPool(object):
                 for job, idx, ret in results:
                     if ret.ready():
                         try:
-                            retval.append((idx, ret.get()))
-                            self.do_finalizers(job, results)
+                            task_result = ret.get()
                         except Exception as e:
-                            m = 'caught error "{0}", waiting for other tasks to finish'
-                            logger.error(m.format(e))
-                            has_errors = True
-                            errors.append((job, e))
+                            if job.ignore_errors is True:
+                                m = 'caught error "{0}", waiting for other tasks to finish'
+                                logger.error(m.format(e))
+                                has_errors = True
+                                errors.append((job, e))
+                            else:
+                                m = "caught error {0} with task {1}. exiting now."
+                                logger.error(m.format(e, job.description))
+                                raise SystemExit(1)
 
+                        retval.append((idx, task_result))
+                        self.do_finalizers(job, results)
                         results.remove((job, idx, ret))
 
                 if len(results) == 0:
@@ -164,22 +170,23 @@ class WorkerPool(object):
                 try:
                     retval.append((idx, ret.get()))
                 except Exception as e:
-                    m = 'caught error "{0}", waiting for other tasks to finish'
-                    logger.error(m.format(e))
-                    has_errors = True
-                    errors.append((job, e))
+                    if job.ignore_errors is True:
+                        m = 'caught error "{0}" in {1}, waiting for other tasks to finish'
+                        logger.error(m.format(e, job.description))
+                        has_errors = True
+                        errors.append((job, e))
+                    else:
+                        m = "caught error {0} with task {1}. exiting now."
+                        logger.error(m.format(e, job.description))
+                        raise SystemExit(1)
 
-        # after all tasks complete, process and raise an error if needed
         if has_errors is True:
             error_list = []
             for job, err in errors:
                 error_list.append(err)
-                if job.description is None:
-                    logger.error("encountered error '{0}' in {1}".format(err, job.job))
-                else:
-                    logger.error("'{0}' caught error: {1}, exiting".format(job.description, err))
 
-            raise PoolResultsError(error_list)
+            logger.error(PoolResultsError(error_list))
+            raise SystemExit(1)
         else:
             return [r[1] for r in retval]
 

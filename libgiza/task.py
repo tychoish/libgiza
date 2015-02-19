@@ -44,7 +44,8 @@ class Task(object):
     no-op, unless forced.
     """
 
-    def __init__(self, job=None, args=None, description=None, target=None, dependency=None):
+    def __init__(self, job=None, args=None,
+                 description=None, target=None, dependency=None, ignore=None):
         """
         All arguments are optional. You can define a :class:`~giza.task.Task()`
         either upon creation, or after creation by modifying attributes.
@@ -66,17 +67,23 @@ class Task(object):
         self._conf = None
         self._args = None
         self._force = None
+        self._ignore_errors = None
+        self._description = None
         if job is not None:
             self.job = job
         self._finalizers = []
         self.args_type = None
-        self.description = description
 
         self.target = target
         self.dependency = dependency
 
+        # use default setter logic for these options
         if args is not None:
             self.args = args
+        if ignore is not None:
+            self.ignore_errors = ignore
+        if description is not None:
+            self.description = description
 
         logger.debug('created task object calling {0}, for {1}'.format(job, description))
         self._task_id = None
@@ -87,6 +94,17 @@ class Task(object):
             self._task_id = hash(str(self.job)) + hash(str(self.args))
 
         return self._task_id
+
+    @property
+    def description(self):
+        if self._description is None:
+            return str(self.job)
+        else:
+            return ' '.join([self._description, str(self.job)])
+
+    @description.setter
+    def description(self, value):
+        self._description = value
 
     @property
     def dependency(self):
@@ -108,16 +126,33 @@ class Task(object):
     def force(self):
         if self._force is None:
             if self.conf is None:
-                self._force = False
+                return False
             else:
                 logger.warning('deprecated use of conf object in app setup for force value')
-                self._force = self.conf.runstate.force
+                return self.conf.runstate.force
 
         return self._force
 
     @force.setter
     def force(self, value):
-        self._force = bool(value)
+        if isinstance(value, bool):
+            self._force = value
+
+    @property
+    def ignore_errors(self):
+        if self._ignore_errors is None:
+            if self.conf is None:
+                return True
+            else:
+                logger.warning('deprecated use of conf object in app setup for ignore_errors value')
+                return self.conf.runstate.ignore_errors
+
+        return False
+
+    @ignore_errors.setter
+    def ignore_errors(self, value):
+        if isinstance(value, bool):
+            self._ignore_errors = value
 
     def define_dependency_node(self, target, dependency):
         self.target = target
