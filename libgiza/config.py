@@ -142,7 +142,7 @@ class ConfigurationBase(object):
             if safe in (True, None):
                 if key.startswith('_'):
                     continue
-                elif key in ('pass', 'password', 'token'):
+                elif key in ('pass', 'password', 'token', 'key', 'secret'):
                     d[key] = 'redacted'
                 else:
                     d[key] = get_dict_value(value)
