@@ -58,7 +58,11 @@ class GitRepo(object):
     def cmd(self, *args):
         cmd_parts = ['git']
 
-        cmd_parts.extend(args)
+        for arg in args:
+            if isinstance(arg, list):
+                cmd_parts.extend(arg)
+            else:
+                cmd_parts.append(arg)
 
         try:
             return str(subprocess.check_output(args=cmd_parts,
