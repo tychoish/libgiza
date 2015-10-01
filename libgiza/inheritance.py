@@ -240,13 +240,27 @@ class InheritableContentBase(RecursiveConfigurationBase):
                 if isinstance(self.state[key], collections.Iterable):
                     should_resplit = None
 
+                    # code blocks are stored internally as lists to preserve
+                    # formatting, so to preserve formatting and compatibility
+                    # with existing examples, we join them up, do the formatting
+                    # and then split it back up.
                     if isinstance(self.state[key], list):
                         for it in self.state[key]:
                             if not isinstance(it, basestring):
                                 should_resplit = False
+                                break
+
+                        # do the splitting, but if any of the elements weren't
+                        # strings then we can't render the string, so it makes
+                        # sense to go on to the next key in the dict.
                         if should_resplit is None:
                             should_resplit = True
                             self.state[key] = '\n'.join(self.state[key])
+                        elif should_resplit is False:
+                            continue
+
+                    # we do this in a loop to in case there are replacements in
+                    # replacements. 10 seems like a good number.
                     for i in attempts:
                         if '{{' not in self.state[key]:
                             break
@@ -263,6 +277,10 @@ class InheritableContentBase(RecursiveConfigurationBase):
                         self.state[key].replacement = self.replacement
 
                     self.state[key].render()
+
+                if isinstance(self.state[key], basestring) and "{{" in self.state[key]:
+                    logger.error("unable to resolve all tokens in content"
+                                 " '{0}' key '{1}'.".format(self.ref, key))
 
 
 class DataContentBase(RecursiveConfigurationBase):
@@ -318,6 +336,9 @@ class DataContentBase(RecursiveConfigurationBase):
                 src = [doc for doc in yaml.safe_load_all(f)]
 
         for doc in src:
+            if doc is None:
+                logger.error("content documents cannot be null. check document separators")
+
             if self.edition_check(doc, self.conf) is False:
                 continue
             try:

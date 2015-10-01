@@ -8,3 +8,4 @@ dist/
 *#*
 TAGS
 *.egg-info
+.coverage

@@ -1,8 +1,8 @@
 nosetests:
 	@echo "[testing] running nosetests"
-	nosetests
+	nosetests --with-coverage --cover-package libgiza
 ifeq ($(shell test -f /etc/arch-release && echo arch || echo Linux),arch)
-	nosetests2
+	nosetests2 --with-coverage --cover-package libgiza
 endif
 
 pyflakes:

@@ -33,6 +33,7 @@ class ConfigurationError(Exception):
 
 class ConfigurationBase(object):
     _option_registry = []
+    _redacted_keys = ['pass', 'password', 'token', 'key', 'secret']
     _version = 0
 
     def __init__(self, input_obj=None):
@@ -140,9 +141,9 @@ class ConfigurationBase(object):
 
         for key, value in self.state.items():
             if safe in (True, None):
-                if key.startswith('_'):
+                if key != "_id" and key.startswith('_'):
                     continue
-                elif key in ('pass', 'password', 'token', 'key', 'secret'):
+                elif key in self._redacted_keys:
                     d[key] = 'redacted'
                 else:
                     d[key] = get_dict_value(value)
