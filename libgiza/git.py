@@ -81,9 +81,9 @@ class GitRepo(object):
 
         if repo_path is not None:
             args.append(repo_path)
+            self.path = repo_path
 
         ret = self.cmd(*args)
-        self.path = repo_path
 
         return ret
 

@@ -31,6 +31,10 @@ class ConfigurationError(Exception):
     pass
 
 
+class OutputError(Exception):
+    pass
+
+
 class ConfigurationBase(object):
     _option_registry = []
     _redacted_keys = ['pass', 'password', 'token', 'key', 'secret']
@@ -160,15 +164,20 @@ class ConfigurationBase(object):
             else:
                 fn = self._source_fn
 
+        if not isinstance(fn, basestring):
+            raise OutputError("unsupported file format: {0}".format(fn))
+
         if 'v' not in self.state:
             self.state['v'] = self._version
 
         if fn.endswith('json'):
             with open(fn, 'w') as f:
                 json.dump(self.dict(safe=False), f, indent=3, sort_keys=True)
-        elif fn.endswith('yaml'):
+        elif fn.endswith('yaml') or fn.endswith('yml'):
             with open(fn, 'w') as f:
                 yaml.safe_dump_all(self.dict(safe=False), f, default_flow_style=False)
+        else:
+            raise OutputError("unsupported file format: {0}".format(fn))
 
     @classmethod
     @contextlib.contextmanager
