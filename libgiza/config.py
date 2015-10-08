@@ -156,7 +156,7 @@ class ConfigurationBase(object):
 
         return d
 
-    def write(self, fn=None):
+    def write(self, fn=None, add_version=False):
         if fn is None:
             if self._source_fn is None:
                 logger.error('cannot write object to unspecified file.')
@@ -167,7 +167,7 @@ class ConfigurationBase(object):
         if not isinstance(fn, basestring):
             raise OutputError("unsupported file format: {0}".format(fn))
 
-        if 'v' not in self.state:
+        if add_version is True and 'v' not in self.state:
             self.state['v'] = self._version
 
         if fn.endswith('json'):

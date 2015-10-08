@@ -65,9 +65,14 @@ class GitRepo(object):
                 cmd_parts.append(arg)
 
         try:
-            return str(subprocess.check_output(args=cmd_parts,
-                                               cwd=self.path,
-                                               stderr=subprocess.STDOUT).strip())
+            if os.path.exists(self.path):
+                return str(subprocess.check_output(args=cmd_parts,
+                                                   cwd=self.path,
+                                                   stderr=subprocess.STDOUT).strip())
+            else:
+                return str(subprocess.check_output(args=cmd_parts,
+                                                   stderr=subprocess.STDOUT).strip())
+
         except Exception as e:
             logger.error('encountered error with {0} in repository {1}'.format(' '.join(cmd_parts),
                                                                                self.path))
@@ -80,6 +85,8 @@ class GitRepo(object):
             args.extend(['--branch', branch])
 
         if depth is not None:
+            if isinstance(depth, int):
+                depth = str(int)
             args.extend(["--depth", depth])
 
         if repo_path is not None:
