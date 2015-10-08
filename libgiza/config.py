@@ -69,7 +69,7 @@ class ConfigurationBase(object):
             with open(input_obj, 'r') as f:
                 if input_obj.endswith('json'):
                     input_obj = json.load(f)
-                elif input_obj.endswith('yaml'):
+                elif input_obj.endswith('yaml') or input_obj.endswith('yml'):
                     input_obj = yaml.safe_load(f)
                 else:
                     logger.error("file {0} has unknown data format".format(input_obj))
