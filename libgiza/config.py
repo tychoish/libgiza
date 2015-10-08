@@ -175,7 +175,7 @@ class ConfigurationBase(object):
                 json.dump(self.dict(safe=False), f, indent=3, sort_keys=True)
         elif fn.endswith('yaml') or fn.endswith('yml'):
             with open(fn, 'w') as f:
-                yaml.safe_dump_all(self.dict(safe=False), f, default_flow_style=False)
+                yaml.safe_dump(self.dict(safe=False), f, default_flow_style=False)
         else:
             raise OutputError("unsupported file format: {0}".format(fn))
 

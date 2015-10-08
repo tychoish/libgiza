@@ -73,11 +73,14 @@ class GitRepo(object):
                                                                                self.path))
             raise GitError(e)
 
-    def clone(self, remote, repo_path=None, branch=None):
+    def clone(self, remote, repo_path=None, branch=None, depth=None):
         args = ['clone', remote]
 
         if branch is not None:
             args.extend(['--branch', branch])
+
+        if depth is not None:
+            args.extend(["--depth", depth])
 
         if repo_path is not None:
             args.append(repo_path)
