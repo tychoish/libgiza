@@ -120,7 +120,7 @@ class BuildApp(object):
         if self.root_app is True:
             return "a root level BuildApp object: " + jobs
         else:
-            return "a sublevel BuildApp object: " + jobs
+            return "a BuildApp member BuildApp object: " + jobs
 
     @property
     def force(self):
@@ -168,15 +168,14 @@ class BuildApp(object):
 
     @property
     def randomize(self):
-        if hasattr(self, '_randomize'):
-            return self._randomize
-        else:
-            return False
+        return self._randomize
 
     @randomize.setter
     def randomize(self, value):
         if isinstance(value, bool):
             self._randomize = value
+        else:
+            self._randomize = bool(value)
 
     @property
     def default_pool(self):

@@ -685,9 +685,37 @@ class CommonAppSuite(object):
             self.assertTrue(result >= 6)
             self.assertTrue(result <= 24)
 
+    def test_dependency(self):
+        self.assertIsNone(self.app.dependency)
+
+        test_value = "string"
+        self.app.dependency = test_value
+        self.assertIsNotNone(self.app.dependency)
+        self.assertIs(test_value, self.app.dependency)
+
+    def test_target(self):
+        self.assertIsNone(self.app.target)
+
+        test_value = "string"
+        self.app.target = test_value
+        self.assertIsNotNone(self.app.target)
+        self.assertIs(test_value, self.app.target)
+
+    def test_description(self):
+        # if no jobs defined.
+
+        sub_app = self.app.add("app")
+
+        self.assertTrue("member" in sub_app.description)
+        self.assertTrue("root level" in self.app.description)
+
+        self.assertEquals(0, len(sub_app.queue))
+        self.assertTrue(sub_app.description.endswith(": []"))
+        self.assertEquals(1, len(self.app.queue))
+        self.assertTrue(self.app.description.endswith(": [{0}]".format(type(self.app))))
+
 
 class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
-    @classmethod
     def setUp(self):
         self.c = Configuration()
         self.c.runstate = RuntimeStateConfig()
@@ -717,6 +745,20 @@ class TestBuildAppStandardConfig(CommonAppSuite, TestCase):
         self.assertIs(self.c, self.app.queue[0].conf)
         self.assertIs(self.c, t.conf)
 
+    def test_force_options(self):
+        self.assertEquals(self.c.runstate.force, self.app.force)
+        self.assertFalse(self.c.runstate.force)
+        self.assertFalse(self.app.force)
+
+        self.app._force = None
+        self.assertFalse(self.app.force)
+
+    def test_default_pool_size(self):
+        self.assertIsNotNone(self.c)
+        self.assertIsNotNone(self.app.conf)
+        self.app._pool_size = None
+        self.assertEquals(self.c.runstate.pool_size, self.app.pool_size)
+
     def tearDown(self):
         self.app.close_pool()
 
@@ -731,3 +773,26 @@ class TestBuildAppMinimalConfig(CommonAppSuite, TestCase):
 
     def tearDown(self):
         self.app.close_pool()
+
+
+class TestBuildAppAlternateConstructor(CommonAppSuite, TestCase):
+    @classmethod
+    def setUp(self):
+        self.app = BuildApp.new(pool_type=random.choice(['serial', 'thread']),
+                                pool_size=None, force=None)
+        self.c = None
+
+    def tearDown(self):
+        self.app.close_pool()
+
+    # the following tests aren't specifically relevant to this constructor, but
+    # rather to the "None" value of the constructor.
+
+    def test_force_setter(self):
+        self.assertIsNone(self.app.conf)
+        self.assertFalse(self.app.force)
+        self.app._force = None
+        self.assertFalse(self.app.force)
+
+    def test_pool_size(self):
+        self.assertIsNone(self.app.pool_size)
