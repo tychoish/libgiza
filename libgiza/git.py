@@ -42,16 +42,21 @@ class GitRepo(object):
         :param string path: Optional. Defines a the path of the git
            repository. If not specified, defaults to the current working
            directory.
+
+           Attempts to find the top-level (root) directory of the git
+           repository, if you specify a path that's a sub-directory in a git
+           repository.
         """
 
         if path is None:
             self.path = os.getcwd()
-            try:
-                self.path = self.cmd('rev-parse', '--show-toplevel')
-            except GitError:
-                logger.error('{0} may not be a git repository'.format(self.path))
         else:
             self.path = path
+
+        try:
+            self.path = self.cmd('rev-parse', '--show-toplevel')
+        except GitError:
+            logger.error('{0} may not be a git repository'.format(self.path))
 
         logger.debug("created git repository management object for {0}".format(self.path))
 
