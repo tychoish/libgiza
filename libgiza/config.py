@@ -87,10 +87,13 @@ class ConfigurationBase(object):
         try:
             return object.__getattribute__(self, key)
         except AttributeError as e:
+            m = 'key "{0}" in configuration object ({1}) is not defined'.format(key, type(self))
             if key in self._option_registry:
-                return self.state[key]
+                try:
+                    return self.state[key]
+                except KeyError as key_err:
+                    raise AttributeError(m, e.message)
             else:
-                m = 'key "{0}" in configuration object ({1}) does not exist'.format(key, type(self))
                 if not key.startswith('_'):
                     logger.debug(m)
                 raise AttributeError(m, e.message)

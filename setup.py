@@ -23,6 +23,7 @@ setup(
     test_suite=None,
     tests_require=TEST_REQUIRES,
     install_requires=REQUIRES,
+    package_data={'libgiza': ['test/data-inheritance/*']},
     classifiers=[
         'Environment :: Console',
         'Intended Audience :: Developers',

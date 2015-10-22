@@ -66,10 +66,13 @@ class GitRepo(object):
 
         try:
             if os.path.exists(self.path):
+                logger.debug("running git command ({0}) at path {1}".format(' '.join(cmd_parts),
+                                                                            self.path))
                 return str(subprocess.check_output(args=cmd_parts,
                                                    cwd=self.path,
                                                    stderr=subprocess.STDOUT).strip())
             else:
+                logger.debug("running git command: " + ' '.join(cmd_parts))
                 return str(subprocess.check_output(args=cmd_parts,
                                                    stderr=subprocess.STDOUT).strip())
 
