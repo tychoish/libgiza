@@ -91,7 +91,7 @@ class ConfigurationBase(object):
             if key in self._option_registry:
                 try:
                     return self.state[key]
-                except KeyError as key_err:
+                except KeyError:
                     raise AttributeError(m, e.message)
             else:
                 if not key.startswith('_'):
