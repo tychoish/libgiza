@@ -18,12 +18,12 @@ import contextlib
 
 logger = logging.getLogger('giza.libgit')
 
-
 try:
     import pygit2
 except ImportError:
     pygit2 = None
     import libgiza.git
+
 
 class GitError(Exception):
     pass
