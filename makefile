@@ -1,12 +1,12 @@
-NOSEOPTS := --processes 4 --with-coverage --cover-inclusive --cover-package libgiza
+NOSEOPTS := --processes 2 --with-randomly  --process-timeout 60 --with-coverage --cover-inclusive --cover-package libgiza
 
 nosetests:
 	-rm -f .coverage
 	@echo "[testing] running nosetests"
-	nosetests $(NOSEOPTS)
 ifeq ($(shell test -f /etc/arch-release && echo arch || echo Linux),arch)
 	nosetests2 $(NOSEOPTS)
 endif
+	nosetests $(NOSEOPTS)
 
 pyflakes:
 	@echo "[testing] running pyflakes:"

@@ -7,7 +7,7 @@ python:
   - 'pypy3'
 install:
   - pip install .
-  - pip install giza pyflakes pep8 coverage
+  - pip install giza pyflakes pep8 coverage nose-randomly
 script: make test
 notifications:
   flowdock:
