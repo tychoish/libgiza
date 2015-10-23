@@ -16,10 +16,14 @@ import os
 import logging
 import contextlib
 
-import pygit2
-
 logger = logging.getLogger('giza.libgit')
 
+
+try:
+    import pygit2
+except ImportError:
+    pygit2 = None
+    import libgiza.git
 
 class GitError(Exception):
     pass
@@ -32,6 +36,10 @@ class GitRepo(object):
            repository. If not specified, defaults to the current working
            directory.
         """
+        if pygit2 is None:
+            logger.warning("without pylibgit2 installed, falling back "
+                           "to wrapped git repo implementation.")
+            return libgiza.git.GitRepo(path)
 
         if path is None:
             self.path = os.getcwd()
