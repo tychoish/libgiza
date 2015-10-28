@@ -62,7 +62,7 @@ class ConfigurationBase(object):
 
     def _prep_load_data(self, input_obj):
         if isinstance(input_obj, dict):
-            pass
+            return input_obj
         elif not isinstance(input_obj, ConfigurationBase) and os.path.isfile(input_obj):
             self._source_fn = input_obj
 
@@ -73,6 +73,9 @@ class ConfigurationBase(object):
                     input_obj = yaml.safe_load(f)
                 else:
                     logger.error("file {0} has unknown data format".format(input_obj))
+
+            if input_obj is None:
+                input_obj = {}
         else:
             msg = 'cannot ingest Configuration obj from {0} object'.format(type(input_obj))
             logger.critical(msg)

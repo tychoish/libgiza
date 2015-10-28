@@ -1,4 +1,4 @@
-NOSEOPTS := --quiet --with-randomly --with-coverage --cover-inclusive --cover-package libgiza
+NOSEOPTS := --with-randomly --with-coverage --cover-inclusive --cover-package libgiza
 
 nosetests:
 	-rm -f .coverage
