@@ -202,6 +202,25 @@ class GitRepo(object):
     def pull(self, remote='origin', branch='master'):
         return self.cmd('pull', remote, branch)
 
+    def push(self, remote='origin', ref=None):
+        if ref is None:
+            ref = self.current_branch()
+
+        return self.cmd("push", remote, ref)
+
+    def tag(self, name, delete=False, force=False):
+        args = ["tag"]
+
+        if delete is True:
+            args.append("-d")
+
+        if force is True:
+            args.append("-f")
+
+        args.append(name)
+
+        return self.cmd(*args)
+
     def current_branch(self):
         return self.cmd('symbolic-ref', 'HEAD').split('/')[2]
 
