@@ -224,7 +224,7 @@ class GitRepo(object):
 
         if annotation is not None:
             if isinstance(annotation, basestring):
-                args.extend(["-m" , annotation])
+                args.extend(["-m", annotation])
             else:
                 raise TypeError("tag annotations must be strings. {0} {1} "
                                 "is not a string".format(annotation, type(annotation)))
