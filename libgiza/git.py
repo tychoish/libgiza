@@ -20,11 +20,15 @@ Python-layer on top of common git operations.
 import logging
 import os
 import re
+import sys
 import contextlib
 import subprocess
 import shlex
 
 logger = logging.getLogger('libgiza.git')
+
+if sys.version_info >= (3, 0):
+    basestring = str
 
 
 class GitError(Exception):
@@ -82,9 +86,8 @@ class GitRepo(object):
                                                    stderr=subprocess.STDOUT).strip())
 
         except Exception as e:
-            logger.error('encountered error with {0} in repository {1}'.format(' '.join(cmd_parts),
-                                                                               self.path))
-            raise GitError(e)
+            raise GitError('encountered error {0} ({1}) with {2} in repository '
+                           '{3}'.format(e, type(e), ' '.join(cmd_parts), self.path))
 
     def clone(self, remote, repo_path=None, branch=None, depth=None):
         args = ['clone', remote]
@@ -208,7 +211,7 @@ class GitRepo(object):
 
         return self.cmd("push", remote, ref)
 
-    def tag(self, name, delete=False, force=False):
+    def tag(self, name, annotation=None, delete=False, force=False):
         args = ["tag"]
 
         if delete is True:
@@ -219,7 +222,32 @@ class GitRepo(object):
 
         args.append(name)
 
+        if annotation is not None:
+            if isinstance(annotation, basestring):
+                args.extend(["-m" , annotation])
+            else:
+                raise TypeError("tag annotations must be strings. {0} {1} "
+                                "is not a string".format(annotation, type(annotation)))
+
         return self.cmd(*args)
+
+    def is_taged(self, name, ref="HEAD", lightweight=False,):
+        cmd = ["describe"]
+
+        if lightweight is True:
+            cmd.append("--tags")
+
+        try:
+            tag = self.cmd(*cmd)
+            if tag == name:
+                return True
+            else:
+                return False
+        except GitError:
+            return False
+
+    def push_tags(self, remote="origin"):
+        return self.cmd("push", "--tags", remote, )
 
     def current_branch(self):
         return self.cmd('symbolic-ref', 'HEAD').split('/')[2]
