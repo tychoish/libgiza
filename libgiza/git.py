@@ -231,7 +231,7 @@ class GitRepo(object):
 
         return self.cmd(*args)
 
-    def is_taged(self, name, ref="HEAD", lightweight=False,):
+    def is_tagged(self, name, ref="HEAD", lightweight=False,):
         cmd = ["describe"]
 
         if lightweight is True:
