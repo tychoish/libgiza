@@ -211,7 +211,7 @@ class GitRepo(object):
 
         return self.cmd("push", remote, ref)
 
-    def tag(self, name, annotation=None, delete=False, force=False):
+    def tag(self, name, ref="HEAD", annotation=None, delete=False, force=False):
         args = ["tag"]
 
         if delete is True:
@@ -220,8 +220,6 @@ class GitRepo(object):
         if force is True:
             args.append("-f")
 
-        args.append(name)
-
         if annotation is not None:
             if isinstance(annotation, basestring):
                 args.extend(["-m", annotation])
@@ -229,9 +227,11 @@ class GitRepo(object):
                 raise TypeError("tag annotations must be strings. {0} {1} "
                                 "is not a string".format(annotation, type(annotation)))
 
+        args.extend([name, ref])
+
         return self.cmd(*args)
 
-    def is_tagged(self, name, ref="HEAD", lightweight=False,):
+    def is_tagged(self, name, ref="HEAD", lightweight=False):
         cmd = ["describe"]
 
         if lightweight is True:
@@ -245,9 +245,6 @@ class GitRepo(object):
                 return False
         except GitError:
             return False
-
-    def push_tags(self, remote="origin"):
-        return self.cmd("push", "--tags", remote, )
 
     def current_branch(self):
         return self.cmd('symbolic-ref', 'HEAD').split('/')[2]
