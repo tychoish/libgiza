@@ -68,7 +68,8 @@ class TestTypedDictionaryObjectCreation(unittest.TestCase):
 
     def test_creation_of_objects_works_correctly_with_input_base_object(self):
         for base in [{"foo": True, "bar": False}, [("foo", True), ("bar", False)],
-                     {"baz": False}, [("baz", False)], {}, [], tuple()]:
+                     {"baz": False}, [("baz", False)], {}, [], tuple(),
+                     tuple((("foo", True), ("bar", False)))]:
             d = libgiza.typed_dict.TypedDict(basestring, bool)
             d.ingest(base)
             self.assertTrue(len(d) == len(base))
@@ -172,3 +173,12 @@ class TestTypedDictionaryOperations(unittest.TestCase):
         self.assertIsInstance(self.d.check_key(self.key), list)
         self.assertIsInstance(self.d.check_value(self.value), list)
         self.assertIsInstance(self.d.check_pair(self.key, self.value), list)
+
+    def test_check_functions_raise_exception(self):
+        def bad_pair_validator(self, key, value):
+            raise AttributeError("error")
+
+        self.d.check_pair = bad_pair_validator
+
+        with self.assertRaises(ValueError):
+            self.d[self.key] = self.value
