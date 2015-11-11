@@ -32,3 +32,17 @@ class TestConfigurationObjectPersistance(unittest.TestCase):
 
             d = self.conf(f.name)
             self.assertEquals(d._test_data, 43)
+
+
+class TestConfigurationObjectMembership(unittest.TestCase):
+    def setUp(self):
+        self.conf = libgiza.config.ConfigurationBase()
+
+    def test_internal_values(self):
+        self.assertNotIn("_foo", self.conf)
+        self.assertNotIn("_foo", self.conf.state)
+
+        self.conf._foo = 42
+
+        self.assertIn("_foo", self.conf)
+        self.assertNotIn("_foo", self.conf.state)

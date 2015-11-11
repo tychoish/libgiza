@@ -84,7 +84,12 @@ class ConfigurationBase(object):
         return input_obj
 
     def __contains__(self, key):
-        return key in self.state
+        if key in self.state:
+            return True
+        elif key.startswith("_") and hasattr(self, key):
+            return True
+        else:
+            return False
 
     def __getattr__(self, key):
         try:
