@@ -57,7 +57,7 @@ class GitRepo(object):
         else:
             self.path = path
 
-        if self.is_repo():
+        if not self.is_repo():
             logger.warning('{0} may not be a git repository'.format(self.path))
 
         logger.debug("created git repository management object for {0}".format(self.path))
