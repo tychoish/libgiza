@@ -78,7 +78,7 @@ class TypedDict(future.utils.with_metaclass(abc.ABCMeta, dict)):
         if args is None or len(args) == 0:
             return
         elif isinstance(args, tuple):
-            dict.__init__(self, args)
+            dict.__init__(self, *args)
         else:
             dict.__init__(self, args)
 
