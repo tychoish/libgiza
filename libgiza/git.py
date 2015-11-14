@@ -57,9 +57,6 @@ class GitRepo(object):
         else:
             self.path = path
 
-        if not self.is_repo():
-            logger.warning('{0} may not be a git repository'.format(self.path))
-
         logger.debug("created git repository management object for {0}".format(self.path))
 
     def cmd(self, *args):
@@ -82,6 +79,7 @@ class GitRepo(object):
                 logger.debug("running git command: " + ' '.join(cmd_parts))
                 return str(subprocess.check_output(args=cmd_parts,
                                                    stderr=subprocess.STDOUT).strip())
+
         except Exception as e:
             raise GitError('encountered error {0} ({1}) with {2} in repository '
                            '{3}'.format(e, type(e), ' '.join(cmd_parts), self.path))
@@ -114,13 +112,16 @@ class GitRepo(object):
         return self.cmd(*args)
 
     def top_level(self):
-        return self.cmd('rev-parse', '--show-toplevel')
-
-    def is_repo(self):
         try:
-            self.top_level()
-            return True
+            return self.cmd('rev-parse', '--show-toplevel')
         except GitError:
+            logger.error('{0} may not be a git repository'.format(self.path))
+            return self.path
+
+    def is_repository(self):
+        if os.path.isdir(os.path.join(self.top_level(), ".git")):
+            return True
+        else:
             return False
 
     def remotes(self):
