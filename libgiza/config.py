@@ -136,23 +136,23 @@ class ConfigurationBase(object):
     def __repr__(self):
         return str(self.dict())
 
+    def __get_dict_value__(self, v, safe=True):
+        if isinstance(v, ConfigurationBase):
+            return v.dict(safe)
+        elif isinstance(v, list) and len(v) > 0 and isinstance(v[0], ConfigurationBase):
+            return [i.dict() for i in v]
+        elif isinstance(v, dict):
+            sub_d = {}
+            for key, value, in v.items():
+                sub_d[key] = self.__get_dict_value__(value)
+            return sub_d
+        elif self._is_value_type(v):
+            return v
+        else:
+            return 'error'
+
     def dict(self, safe=True):
         d = {}
-
-        def get_dict_value(v):
-            if isinstance(v, ConfigurationBase):
-                return v.dict(safe)
-            elif isinstance(v, list) and len(v) > 0 and isinstance(v[0], ConfigurationBase):
-                return [i.dict() for i in v]
-            elif isinstance(v, dict):
-                sub_d = {}
-                for key, value, in v.items():
-                    sub_d[key] = get_dict_value(value)
-                return sub_d
-            elif self._is_value_type(v):
-                return v
-            else:
-                return 'error'
 
         for key, value in self.state.items():
             if safe in (True, None):
@@ -161,9 +161,9 @@ class ConfigurationBase(object):
                 elif key in self._redacted_keys:
                     d[key] = 'redacted'
                 else:
-                    d[key] = get_dict_value(value)
+                    d[key] = self.__get_dict_value__(value, safe)
             elif safe is False:
-                d[key] = get_dict_value(value)
+                d[key] = self.__get_dict_value__(value, safe)
 
         return d
 
