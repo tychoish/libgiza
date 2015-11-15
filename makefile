@@ -1,4 +1,4 @@
-NOSEOPTS := --quiet --processes 2 --process-timeout 30 --with-randomly --with-coverage --cover-inclusive --cover-package libgiza
+NOSEOPTS := --quiet --processes 2 --process-timeout 30 --with-randomly libgiza
 
 nosetests:
 	-rm -f .coverage
