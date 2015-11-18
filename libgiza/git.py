@@ -30,6 +30,9 @@ logger = logging.getLogger('libgiza.git')
 if sys.version_info >= (3, 0):
     basestring = str
 
+    def unicode(s):
+        return str(s, 'utf-8')
+
 
 class GitError(Exception):
     pass
@@ -72,13 +75,13 @@ class GitRepo(object):
             if os.path.exists(self.path):
                 logger.debug("running git command ({0}) at path {1}".format(' '.join(cmd_parts),
                                                                             self.path))
-                return str(subprocess.check_output(args=cmd_parts,
-                                                   cwd=self.path,
-                                                   stderr=subprocess.STDOUT).strip())
+                return unicode(subprocess.check_output(args=cmd_parts,
+                                                       cwd=self.path,
+                                                       stderr=subprocess.STDOUT).strip())
             else:
                 logger.debug("running git command: " + ' '.join(cmd_parts))
-                return str(subprocess.check_output(args=cmd_parts,
-                                                   stderr=subprocess.STDOUT).strip())
+                return unicode(subprocess.check_output(args=cmd_parts,
+                                                       stderr=subprocess.STDOUT).strip())
 
         except Exception as e:
             raise GitError('encountered error {0} ({1}) with {2} in repository '
