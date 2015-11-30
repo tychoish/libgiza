@@ -245,13 +245,20 @@ class GitRepo(object):
         if lightweight is True:
             cmd.append("--tags")
 
+        cmd.append(name)
+
         try:
-            tag = self.cmd(*cmd)
-            if tag == name:
-                return True
-            else:
-                return False
+            self.cmd(*cmd)
         except GitError:
+            return False
+
+        if ref == "HEAD":
+            ref = self.sha(ref)
+
+        tagged_commit = self.cmd(["rev-list", "-n", "1", name])
+        if tagged_commit == ref:
+            return True
+        else:
             return False
 
     def current_branch(self):
