@@ -115,16 +115,6 @@ class TestErrorObject(unittest.TestCase):
         self.assertTrue(self.error.include_trace)
         self.assertTrue(hasattr(self.error, "_include_trace"))
 
-    def test_trace_property_omits_the_last_caller(self):
-        self.assertEquals(len(self.error.trace), len(self.error._trace)-1)
-
-        for idx, item in enumerate(self.error._trace):
-            if idx+1 == len(self.error._trace):
-                self.assertTrue(item not in self.error.trace)
-            else:
-                self.assertEquals(item, self.error.trace[idx])
-                self.assertTrue(item in self.error.trace)
-
     def test_payload_attribute_always_returns_dict(self):
         self.assertIsInstance(self.error.payload, dict)
         self.assertIsNone(self.error._payload)
@@ -200,7 +190,7 @@ class CollectorChecks(object):
         self.assertTrue(1, len(self.collector))
 
     def test_add_error_method_raises_type_error_for_invalid_error_types(self):
-        for value in [1.02, True, False, None, 42, {"a": 1}, (1, 2),
+        for value in [1.02, True, False, 42, {"a": 1}, (1, 2),
                       object(), Exception(), self, TypeError, [True, False], {}, []]:
             with self.assertRaises(TypeError):
                 self.collector.add(value)

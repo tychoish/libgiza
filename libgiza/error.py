@@ -15,6 +15,8 @@ logger = logging.getLogger('libgiza.error')
 if sys.version_info >= (3, 0):
     basestring = str
 
+_DEFAULT_ERROR_MESSAGE = "generic error"
+
 
 class Error(object):
     """
@@ -23,12 +25,11 @@ class Error(object):
     exceptions (e.g. for continue on error situations.)
     """
 
-    def __init__(self, message="generic error", include_trace=True, fatal=True):
+    def __init__(self, message=_DEFAULT_ERROR_MESSAGE, include_trace=True, fatal=True):
         self.capture_trace()
         self._include_trace = include_trace
         self._fatal = fatal
         self._payload = None
-
         self.message = message
 
     @property
@@ -37,7 +38,7 @@ class Error(object):
 
     @message.setter
     def message(self, value):
-        if hasattr(self, "_message") and self._message != "generic error":
+        if hasattr(self, "_message") and self._message != _DEFAULT_ERROR_MESSAGE:
             raise ValueError("cannot overwrite existing message ({0}) with new message "
                              "({1})".format(self._message, value))
         elif isinstance(value, basestring):
@@ -79,7 +80,7 @@ class Error(object):
     def trace(self):
         # we want to drop the last stack frame because it's the assignment to
         # self._trace, which isn't relevant to the error.
-        return self._trace[:-1]
+        return self._trace[-10:][:-2]
 
     def capture_trace(self):
         self._trace = traceback.extract_stack()
@@ -113,8 +114,8 @@ class Error(object):
 
         if self.include_trace:
             output.append("traceback:")
-            for ln in traceback.format_list(self.trace):
-                output.extend(ln.split("\n"))
+            for trace_line in traceback.format_list(self.trace):
+                output.extend([ln for ln in trace_line.split("\n") if ln != ''])
 
         return prefix + ("\n" + prefix).join(output)
 
@@ -125,8 +126,14 @@ class Error(object):
                 "trace": [{"file": t[0], "line": t[1], "function": t[2], "operation": t[3]}
                           for t in self.trace]}
 
+    # define correct representations
     def __repr__(self):
-        # provides a string representation "print(ErrorObject())"
+        return str(self.dict())
+
+    def __str__(self):
+        return self.render_output()
+
+    def __format__(self):
         return self.render_output()
 
 
@@ -182,7 +189,9 @@ class ErrorCollector(object):
             return False
 
     def add(self, error):
-        if isinstance(error, Error):
+        if error is None:
+            return
+        elif isinstance(error, Error):
             with self.lock:
                 if error.fatal:
                     self._contains_fatal_error = True
@@ -196,12 +205,12 @@ class ErrorCollector(object):
                     self.errors.extend(error.errors)
                     error.clear()
         else:
-            raise TypeError("can only add ErrorObject and ErrorGroup objects to an ErrorGroup. "
-                            "{0} ({1})".format(error, type(error)))
+            raise TypeError("can only add ErrorObject and ErrorCollector objects to an "
+                            "ErrorCollector. {0} ({1})".format(error, type(error)))
 
     def clear(self):
         if self.has_errors():
-            logger.warning("clearing {0} errors from error group".format(self.count))
+            logger.debug("clearing {0} errors from error group".format(self.count))
 
         with self.lock:
             self._contains_fatal_error = False
@@ -234,6 +243,15 @@ class ErrorCollector(object):
             with self.lock:
                 return {"errors": [e.dict() for e in self.errors]}
 
+    # define correct representations
     def __repr__(self):
-        # provides a string representation "print(ErrorObject())"
+        return str(self.dict())
+
+    def __str__(self):
         return self.render_output()
+
+    def __format__(self):
+        return self.render_output()
+
+    def __nonzero__(self):
+        return self.has_errors() and self.fatal

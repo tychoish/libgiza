@@ -5,8 +5,12 @@ values, or pairs of keys and values are of the wrong type or fail validation.
 """
 
 import abc
-
 import future.utils
+import logging
+
+import libgiza.error
+
+logger = logging.getLogger('libgiza.typed_dict')
 
 
 class TypedDict(future.utils.with_metaclass(abc.ABCMeta, dict)):
@@ -18,59 +22,65 @@ class TypedDict(future.utils.with_metaclass(abc.ABCMeta, dict)):
     """
 
     def __init__(self, key_type, value_type):
-        errors = []
+        errors = libgiza.error.ErrorCollector()
         if isinstance(key_type, type):
             self.key_type = key_type
         else:
-            errors.append("key_type ({0}) is not a type value".format(key_type))
+            errors.add(libgiza.error.Error(
+                message="key_type ({0}) is not a type value".format(key_type)))
 
         if isinstance(value_type, type):
             self.value_type = value_type
         else:
-            errors.append("value_type ({0}) is not a type value".format(value_type))
+            errors.add(libgiza.error.Error(
+                "value_type ({0}) is not a type value".format(value_type)))
 
-        if len(errors) > 0:
-            raise TypeError("; ".join(errors))
+        if errors.has_errors() and errors.fatal:
+            logger.debug(errors.render_output())
+            raise TypeError(errors.dict())
 
     def __setitem__(self, key, value):
-        type_errors = []
-        value_errors = []
+        type_errors = libgiza.error.ErrorCollector()
+        value_errors = libgiza.error.ErrorCollector()
 
         if isinstance(key, self.key_type):
-            value_errors.extend(self.check_key(key))
+            value_errors.add(self.check_key(key))
         else:
             try:
                 key = self.key_type(key)
             except Exception as e:
-                type_errors.append("key {0} ({1}) is not of type {2} (had error "
-                                   "{3}:{4})".format(key, type(key), self.key_type, type(e), e))
+                type_errors.add(libgiza.error.ErrorCollector(
+                    message=("key {0} ({1}) is not of type {2} (had error "
+                             "{3}:{4})").format(key, type(key), self.key_type, type(e), e)))
 
         if isinstance(value, self.value_type):
-            value_errors.extend(self.check_value(value))
+            value_errors.add(self.check_value(value))
         else:
             try:
                 value = self.value_type(value)
             except Exception as e:
-                type_errors.append("value for key {0} is not of type {1} (is {2}). (had error "
-                                   "{3}:{4})".format(key, self.value_type, type(value), type(e), e))
+                type_errors.add(libgiza.error.ErrorCollector(
+                    message=("value for key {0} is not of type {1} (is {2}). (had error "
+                             "{3}:{4})").format(key, self.value_type, type(value), type(e), e)))
 
         # if checks for pair errors depend on type/values being correct they
         # may except in unpredictable ways
         try:
-            pair_errors = self.check_pair(key, value)
-            if len(pair_errors) > 0:
-                value_errors.extend(pair_errors)
+            value_errors.add(self.check_pair(key, value))
         except Exception as e:
-            value_errors.append("encountered {0} error when validating "
-                                "pair for key {1}".format(type(e), key))
+            value_errors.add(libgiza.error.Error(
+                message=("encountered {0} error when validating "
+                         "pair for key {1}").format(type(e), key)))
 
-        if len(type_errors) > 0:
-            # want to report value errors too:
-            type_errors.extend(value_errors)
-            raise TypeError('; '.join(type_errors))
+        if type_errors.has_errors() and type_errors.fatal:
+            logger.debug(type_errors.render_output())
+            if value_errors.has_errors():
+                logger.debug(value_errors.render_output())
+            raise TypeError(type_errors.dict())
 
-        if len(value_errors) > 0:
-            raise ValueError('; '.join(value_errors))
+        if value_errors.has_errors() and value_errors.fatal:
+            logger.debug(value_errors.render_output())
+            raise ValueError(value_errors.dict())
 
         dict.__setitem__(self, key, value)
 
@@ -84,12 +94,12 @@ class TypedDict(future.utils.with_metaclass(abc.ABCMeta, dict)):
 
     @abc.abstractmethod
     def check_key(self, key):
-        return []
+        return libgiza.error.ErrorCollector()
 
     @abc.abstractmethod
     def check_value(self, value):
-        return []
+        return libgiza.error.ErrorCollector()
 
     @abc.abstractmethod
     def check_pair(self, key, value):
-        return []
+        return libgiza.error.ErrorCollector()

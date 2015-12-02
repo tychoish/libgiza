@@ -8,11 +8,11 @@ These tests ensure that TypedDicts behave as expected, which is to say, like
 implemented.) and type checking (always.)
 """
 import datetime
-import itertools
 import sys
 import unittest
 
 import libgiza.typed_dict
+import libgiza.error
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -63,9 +63,9 @@ class TestTypedDictionaryObjectCreation(unittest.TestCase):
     def test_abc_implementations_return_correctly_typed_values(self):
         d = libgiza.typed_dict.TypedDict(basestring, bool)
 
-        self.assertIsInstance(d.check_key("foo"), list)
-        self.assertIsInstance(d.check_value(True), list)
-        self.assertIsInstance(d.check_pair("foo", True), list)
+        self.assertIsInstance(d.check_key("foo"), libgiza.error.ErrorCollector)
+        self.assertIsInstance(d.check_value(True), libgiza.error.ErrorCollector)
+        self.assertIsInstance(d.check_pair("foo", True), libgiza.error.ErrorCollector)
 
     def test_creation_of_objects_works_correctly_with_input_base_object(self):
         for base in [{"foo": True, "bar": False}, [("foo", True), ("bar", False)],
@@ -78,7 +78,7 @@ class TestTypedDictionaryObjectCreation(unittest.TestCase):
 class Fake(object):
     def __init__(self, left, right):
         self.value = (left, right)
-        self.validate_results = []
+        self.validate_results = libgiza.error.ErrorCollector()
 
     def validate(self):
         return self.validate_results
@@ -89,16 +89,27 @@ class FakeTypedDict(libgiza.typed_dict.TypedDict):
         super(FakeTypedDict, self).__init__(key_type=Fake,
                                             value_type=Fake)
         self.ingest(args)
-        self.pair_results = []
+        self.pair_results = libgiza.error.ErrorCollector()
 
     def check_key(self, key):
-        return key.validate()
+        collector = key.validate()
+        if collector.has_errors() and collector.fatal:
+            raise ValueError("key {0} has an error".format(key))
+
+        return collector
 
     def check_value(self, value):
-        return value.validate()
+        collector = value.validate()
+        if collector.has_errors() and collector.fatal:
+            raise ValueError
+        else:
+            return collector
 
     def check_pair(self, key, value):
-        return self.pair_results
+        if self.pair_results.has_errors() and self.pair_results.fatal:
+            raise ValueError
+        else:
+            return self.pair_results
 
 
 class TestTypedDictionaryOperations(unittest.TestCase):
@@ -145,34 +156,34 @@ class TestTypedDictionaryOperations(unittest.TestCase):
         self.assertTrue(len(self.d) == 1)
 
     def test_setting_object_with_invalid_key_raises_value_error(self):
-        self.key.validate_results.append("key has an error")
+        self.key.validate_results.add(libgiza.error.Error(message="key has an error"))
 
         with self.assertRaises(ValueError):
             self.d[self.key] = self.value
 
     def test_setting_object_with_invalid_value_raises_value_error(self):
-        self.value.validate_results.append("value has an error")
+        self.key.validate_results.add(libgiza.error.Error(message="value has an error"))
 
         with self.assertRaises(ValueError):
             self.d[self.key] = self.value
 
     def test_setting_object_with_invalid_value_and_key_raises_value_error(self):
-        self.key.validate_results.append("key has an error")
-        self.value.validate_results.append("value has an error")
+        self.key.validate_results.add(libgiza.error.Error(message="key has an error"))
+        self.key.validate_results.add(libgiza.error.Error(message="value has an error"))
 
         with self.assertRaises(ValueError):
             self.d[self.key] = self.value
 
     def test_setting_with_invalid_pair_raises_value_error(self):
-        self.d.pair_results.append("an object has errors")
+        self.key.validate_results.add(libgiza.error.Error(message="an object has errors"))
 
         with self.assertRaises(ValueError):
             self.d[self.key] = self.value
 
-    def test_abc_implementations_of_checks_return_list_values(self):
-        self.assertIsInstance(self.d.check_key(self.key), list)
-        self.assertIsInstance(self.d.check_value(self.value), list)
-        self.assertIsInstance(self.d.check_pair(self.key, self.value), list)
+    def test_abc_implementations_of_checks_return_correctly_typed_values(self):
+        self.assertIsInstance(self.d.check_key(self.key), libgiza.error.ErrorCollector)
+        self.assertIsInstance(self.d.check_value(self.value), libgiza.error.ErrorCollector)
+        self.assertIsInstance(self.d.check_pair(self.key, self.value), libgiza.error.ErrorCollector)
 
     def test_check_functions_raise_exception(self):
         def bad_pair_validator(self, key, value):
@@ -191,25 +202,28 @@ class LatestReleaseDownloads(libgiza.typed_dict.TypedDict):
         self.ingest(args)
 
     def check_key(self, key):
-        return []
+        return libgiza.error.ErrorCollector()
 
     def check_value(self, value):
-        errors = []
+        errors = libgiza.error.ErrorCollector()
 
         if "win" in value:
             if not value.endswith(".zip"):
-                errors.append("windows binaries must end with .zip, not: " + value)
+                errors.add(libgiza.error.Error(
+                    message="windows binaries must end with .zip, not: " + value))
         else:
             if not value.endswith(".tgz"):
-                errors.append("unix-like packages should end with .tgz: " + value)
+                errors.add(libgiza.error.Error(
+                    message="unix-like packages should end with .tgz: " + value))
 
         return errors
 
     def check_pair(self, key, value):
-        errors = []
+        errors = libgiza.error.ErrorCollector()
 
         if key.replace("_", "-", 1) not in value:
-            errors.append("key '{0}' is not in value '{1}'".format(key, value))
+            errors.add(libgiza.error.ErrorCollector(
+                message="key '{0}' is not in value '{1}'".format(key, value)))
 
         return errors
 
@@ -221,16 +235,13 @@ class LatestReleaseDict(libgiza.typed_dict.TypedDict):
         self.ingest(args)
 
     def check_key(self, key):
-        return []
+        return None
 
     def check_value(self, value):
-        if value.validate():
-            return []
-        else:
-            return ["latest release does not validate: " + str(value)]
+        return value.validate()
 
     def check_pair(self, key, value):
-        return []
+        return None
 
 
 class LatestReleaseDocument(libgiza.config.ConfigurationBase):
@@ -287,24 +298,25 @@ class LatestReleaseDocument(libgiza.config.ConfigurationBase):
         self.state["downloads"] = LatestReleaseDownloads(value)
 
     def validate(self):
-        errors = 0
+        errors = libgiza.error.ErrorCollector()
+
         for key in ("rc", "version", "major", "minor", "maintenance", "date", "downloads"):
             if key not in self.state:
-                errors += 1
+                m = ("missing {0} in latest release for series {1} "
+                     "object".format(key, self.version))
+                errors.add(libgiza.error.Error(message=m, include_trace=False))
 
         for platform, url in self.downloads.items():
-            for i in itertools.chain(self.downloads.check_pair(platform, url),
-                                     self.downloads.check_key(platform),
-                                     self.downloads.check_value(url)):
-                errors += 1
+            errors.add(self.downloads.check_pair(platform, url))
+            errors.add(self.downloads.check_key(platform))
+            errors.add(self.downloads.check_value(url))
 
             if self.version not in url:
-                errors += 1
+                m = ("incorrect version ({0}) for url "
+                     "{1}".format(self.version.string, url))
+                errors.add(libgiza.error.Error(message=m, include_trace=False))
 
-        if errors > 0:
-            return False
-        else:
-            return True
+        return errors
 
 
 class TestLatestReleaseTypedDict(unittest.TestCase):
